@@ -1,0 +1,10 @@
+{
+  "verbose": true,
+  "ignore": ["node_modules", ".next"],
+  "watch": ["src/**/*"],
+  "ext": "ts json",
+  "execMap": {
+    "ts": "ts-node"
+  },
+  "exec": "ts-node ./src/server/index.ts"
+}

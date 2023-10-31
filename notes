@@ -1,0 +1,45 @@
+How to use NextJS and Socket.IO
+https://codedamn.com/news/nextjs/how-to-use-socket-io
+
+NextJS and Socket.io with typescript
+https://stackoverflow.com/questions/74023393/working-with-typescript-next-js-and-socket-io
+
+NextJS custom server
+https://wallis.dev/blog/socketio-with-nextjs-and-es6-import
+
+NextJS custom server with TS
+https://dev.to/deiucanta/custom-nextjs-server-with-typescript-3mdb
+
+Fix module resolution
+https://stackoverflow.com/questions/62096269/cant-run-my-node-js-typescript-project-typeerror-err-unknown-file-extension
+
+Generate new database schema:
+npx prisma generate
+
+Reset database:
+npx prisma migrate reset
+
+Open prisma studio:
+npx prisma studio
+
+Push changes from schema.prisma to DB:
+npx prisma db push
+
+TS-node fix aliases:
+https://typestrong.org/ts-node/docs/paths/
+
+Intellisense use alias:
+https://stackoverflow.com/questions/58249053/how-to-intellisense-alias-module-path-in-vscode
+
+Hot reload for custom server NextJS
+https://whoisryosuke.com/blog/2018/nextjs-tip-hot-reloading-for-dynamic-servers/
+https://medium.com/@dinubhagya97/how-to-set-up-a-node-js-typescript-express-project-ddf4b8fe4af6
+
+Start SSH service on windows:
+https://stackoverflow.com/questions/52113738/starting-ssh-agent-on-windows-10-fails-unable-to-start-ssh-agent-service-erro
+
+Add SSH key to SSH agent:
+https://stackoverflow.com/questions/18683092/how-to-run-ssh-add-on-windows
+
+Convert key to OpenSSH key:
+https://serverfault.com/questions/854208/ssh-suddenly-returning-invalid-format
