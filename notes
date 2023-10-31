@@ -43,3 +43,6 @@ https://stackoverflow.com/questions/18683092/how-to-run-ssh-add-on-windows
 
 Convert key to OpenSSH key:
 https://serverfault.com/questions/854208/ssh-suddenly-returning-invalid-format
+
+Flush sourcetree host cache:
+https://community.atlassian.com/t5/Sourcetree-questions/SourceTree-error-The-server-s-host-key-is-not-cached-in-the/qaq-p/1410001
