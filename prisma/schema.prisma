@@ -11,6 +11,24 @@ datasource db {
 }
 
 model User {
-  id String @id @default(cuid())
-  username String @unique
+  id            String   @id @default(cuid())
+  username      String   @unique
+  joinedLobbyId String?
+  JoinedLobby   Lobby?   @relation(fields: [joinedLobbyId], references: [id])
+  lobbyOwner    Boolean?
+}
+
+model Lobby {
+  id         String   @id @default(cuid())
+  name       String   @unique
+  gameTypeId String
+  GameType   GameType @relation(fields: [gameTypeId], references: [id])
+  Users      User[]
+}
+
+model GameType {
+  id         String  @id @default(cuid())
+  name       String  @unique
+  maxPlayers Int
+  Lobby      Lobby[]
 }

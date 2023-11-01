@@ -13,6 +13,12 @@ https://dev.to/deiucanta/custom-nextjs-server-with-typescript-3mdb
 Fix module resolution
 https://stackoverflow.com/questions/62096269/cant-run-my-node-js-typescript-project-typeerror-err-unknown-file-extension
 
+Initialize prisma:
+npx prisma init
+
+Create initial migration:
+npx prisma migrate dev --name init
+
 Generate new database schema:
 npx prisma generate
 
@@ -24,6 +30,12 @@ npx prisma studio
 
 Push changes from schema.prisma to DB:
 npx prisma db push
+
+Prisma partial/full typescript structure:
+https://www.prisma.io/docs/concepts/components/prisma-client/advanced-type-safety/operating-against-partial-structures-of-model-types
+
+Seed Database via Prisma:
+https://www.prisma.io/docs/guides/migrate/seed-database
 
 TS-node fix aliases:
 https://typestrong.org/ts-node/docs/paths/
@@ -46,3 +58,14 @@ https://serverfault.com/questions/854208/ssh-suddenly-returning-invalid-format
 
 Flush sourcetree host cache:
 https://community.atlassian.com/t5/Sourcetree-questions/SourceTree-error-The-server-s-host-key-is-not-cached-in-the/qaq-p/1410001
+
+Wanneer een gebruiker zijn naam heeft ingevuld naar het 'lobbies' scherm gaan
+Styling maken voor het lobbies scherm
+Lobby aanmaken
+Lobby joinen
+Styling maken voor het lobby scherm
+Naar het spel gaan
+Het spel leaven
+
+Create perfect software developer resume:
+https://www.youtube.com/watch?v=GyjzOKdaioU

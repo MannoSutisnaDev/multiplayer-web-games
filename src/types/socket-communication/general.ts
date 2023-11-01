@@ -1,1 +1,0 @@
-export type GenericErrorResponseFunction = ({error}: {error: string}) => void

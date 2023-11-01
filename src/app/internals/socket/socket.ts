@@ -1,30 +1,19 @@
-'use client';
-
-import { CREATE_SESSION_RESPONSE } from "@/types/socket-communication";
+"use client";
 
 import { io } from "socket.io-client";
 
-const socket = io({ autoConnect: false });
+import { SocketClientSide } from "@/app/types";
 
-socket.on(CREATE_SESSION_RESPONSE, ({sessionID}: { sessionID?: string}) => {
-  if (!sessionID) {
-    return;
-  }
-  socket.auth = { sessionID };
-  sessionStorage.setItem('sessionID', sessionID);
-})
+const socket = io({ autoConnect: false }) as SocketClientSide;
 
 const establishSocketConnection = () => {
-  const sessionID = sessionStorage.getItem('sessionID');
-  if (!sessionID) {
+  const sessionId = sessionStorage.getItem("sessionId");
+  if (!sessionId) {
     socket.connect();
     return;
   }
-  socket.auth = { sessionID };
+  socket.auth = { sessionId };
   socket.connect();
-}
+};
 
-export {
-  socket,
-  establishSocketConnection
-}
+export { establishSocketConnection, socket };
