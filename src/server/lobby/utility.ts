@@ -8,7 +8,10 @@ import { PhaseLobbies } from "@/server/lobby/phases/lobbies";
 import { PhaseLobby } from "@/server/lobby/phases/lobby";
 import { SocketServerSide } from "@/server/types";
 import { GameTypes } from "@/shared/types/socket-communication/general";
-import { LobbyWithGameType } from "@/shared/types/socket-communication/types";
+import {
+  LobbyWithGameType,
+  UserWithLobbyItOwns,
+} from "@/shared/types/socket-communication/types";
 
 export const findUser = async (
   socket: SocketServerSide
@@ -17,6 +20,21 @@ export const findUser = async (
   const user = await prisma.user.findFirst({
     where: {
       id: { equals: sessionId },
+    },
+  });
+  return user;
+};
+
+export const findUserWithLobbyItOwns = async (
+  socket: SocketServerSide
+): Promise<UserWithLobbyItOwns | null> => {
+  const sessionId = socket?.data?.sessionId;
+  const user = await prisma.user.findFirst({
+    where: {
+      id: { equals: sessionId },
+    },
+    include: {
+      LobbyItOwns: {},
     },
   });
   return user;
@@ -61,7 +79,6 @@ export const updateUserData = async (socket: SocketServerSide) => {
   socket.data.sessionId = sessionId;
   if (!lobby) {
     setPhase(socket, PhaseLobbies);
-    console.log("back to lobbies", user.username);
   } else {
     setPhase(socket, PhaseLobby);
   }
@@ -78,7 +95,11 @@ export const sendUpdatedLobbies = async () => {
   const lobbies = await prisma.lobby.findMany({
     include: {
       GameType: {},
-      Users: {},
+      Users: {
+        include: {
+          LobbyItOwns: {},
+        },
+      },
     },
   });
   const sockets = io.of("/").sockets;
@@ -95,7 +116,11 @@ export const sendUpdatedLobbiesToPlayer = async (socket: SocketServerSide) => {
   const lobbies = await prisma.lobby.findMany({
     include: {
       GameType: {},
-      Users: {},
+      Users: {
+        include: {
+          LobbyItOwns: {},
+        },
+      },
     },
   });
   socket.emit("UpdateLobbiesResponse", { lobbies });
@@ -120,6 +145,19 @@ export const getSocketByUserId = (userId: string): SocketServerSide | null => {
   return indexedSockets[userId] ?? null;
 };
 
+export const getSocketsByUserIds = (userIds: string[]): SocketServerSide[] => {
+  const indexedSockets = getSocketsIndexed();
+  const sockets: SocketServerSide[] = [];
+  for (const userId of userIds) {
+    const socket = indexedSockets[userId];
+    if (!socket) {
+      continue;
+    }
+    sockets.push(socket);
+  }
+  return sockets;
+};
+
 export const sendUpdateLobbyToPlayer = async (socket: SocketServerSide) => {
   const user = await findUser(socket);
   if (!user || !user.joinedLobbyId) {
@@ -132,11 +170,22 @@ export const sendUpdateLobbyToPlayer = async (socket: SocketServerSide) => {
     include: {
       GameType: {},
       Users: {
-        orderBy: {
-          lobbyOwner: "desc",
+        include: {
+          LobbyItOwns: {},
         },
       },
     },
+  });
+
+  lobby?.Users?.sort?.((a, b) => {
+    const aValue = a?.LobbyItOwns ? 1 : 0;
+    const bValue = b?.LobbyItOwns ? 1 : 0;
+    if (aValue > bValue) {
+      return -1;
+    } else if (aValue < bValue) {
+      return 1;
+    }
+    return 0;
   });
   if (!lobby) {
     return;
@@ -156,11 +205,21 @@ export const sendUpdatedLobby = async (lobbyId: string | null) => {
     include: {
       GameType: {},
       Users: {
-        orderBy: {
-          lobbyOwner: "desc",
+        include: {
+          LobbyItOwns: {},
         },
       },
     },
+  });
+  lobby?.Users?.sort?.((a, b) => {
+    const aValue = a?.LobbyItOwns ? 1 : 0;
+    const bValue = b?.LobbyItOwns ? 1 : 0;
+    if (aValue > bValue) {
+      return -1;
+    } else if (aValue < bValue) {
+      return 1;
+    }
+    return 0;
   });
   if (!lobby) {
     return;

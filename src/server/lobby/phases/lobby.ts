@@ -1,8 +1,8 @@
-import { User } from "@prisma/client";
-
 import prisma from "@/server/db";
+import { createCheckersGame } from "@/server/games/checkers/CheckersRepository";
 import {
   findUser,
+  findUserWithLobbyItOwns,
   getSocketByUserId,
   sendUpdatedLobbies,
   sendUpdatedLobby,
@@ -24,6 +24,7 @@ import {
 import {
   LobbyWithGameTypeAndUsers,
   Phase,
+  UserWithLobbyItOwns,
 } from "@/shared/types/socket-communication/types";
 
 const setReady = (socket: SocketServerSide, { ready }: { ready: boolean }) => {
@@ -48,10 +49,10 @@ const verifyIfUserIsOwner = async (
     | "GenericResponseError"
     | "EditLobbyResponseError" = "GenericResponseError"
 ): Promise<null | {
-  user: User;
+  user: UserWithLobbyItOwns;
   lobby: LobbyWithGameTypeAndUsers;
 }> => {
-  const user = await findUser(socket);
+  const user = await findUserWithLobbyItOwns(socket);
   if (!user) {
     socket.emit(emitType, { error: "User does not exist" });
     return null;
@@ -64,7 +65,11 @@ const verifyIfUserIsOwner = async (
     where: { id: user.joinedLobbyId },
     include: {
       GameType: {},
-      Users: {},
+      Users: {
+        include: {
+          LobbyItOwns: {},
+        },
+      },
     },
   });
   if (!lobby) {
@@ -80,19 +85,7 @@ const verifyIfUserIsOwner = async (
     });
     return null;
   }
-  let ownerCount = 0;
-  for (const user of lobby.Users) {
-    if (user.lobbyOwner) {
-      ownerCount += 1;
-    }
-  }
-  if (ownerCount > 1) {
-    socket.emit(emitType, {
-      error: "The lobby has multiple leaders",
-    });
-    return null;
-  }
-  if (!user.lobbyOwner) {
+  if (user?.LobbyItOwns?.id !== user.joinedLobbyId) {
     socket.emit(emitType, {
       error: "You are not the owner of the lobby",
     });
@@ -113,7 +106,7 @@ const startGame = (socket: SocketServerSide) => {
     const { user, lobby } = isOwnerData;
     let readyCount = 0;
     for (const user of lobby.Users) {
-      if (user.lobbyOwner) {
+      if (user.ready) {
         readyCount += 1;
       }
     }
@@ -129,11 +122,27 @@ const startGame = (socket: SocketServerSide) => {
       });
       return;
     }
+    try {
+      switch (lobby.GameType.name as GameTypes) {
+        case GameTypes.Checkers:
+          createCheckersGame(
+            lobby.id,
+            lobby.Users.map((user) => user.id)
+          );
+          break;
+        default:
+          break;
+      }
+    } catch (e: any) {
+      socket.emit("GenericResponseError", e);
+      return;
+    }
     await prisma.lobby.update({
       where: { id: lobby.id },
       data: { gameStarted: true },
     });
     sendUpdatedLobby(user.joinedLobbyId);
+    sendUpdatedLobbies();
   };
   asyncExecution();
 };
@@ -163,7 +172,6 @@ const editLobby = (
       },
     });
     if (!gameTypeEntry) {
-      console.log({ gameType });
       socket.emit("EditLobbyResponseError", {
         error: "Invalid game type selected.",
       });
@@ -258,13 +266,9 @@ const setNewOwner = (
       });
       return;
     }
-    await prisma.user.update({
-      where: { id: user.id },
-      data: { lobbyOwner: false },
-    });
-    await prisma.user.update({
-      where: { id: userId },
-      data: { lobbyOwner: true },
+    await prisma.lobby.update({
+      where: { id: lobby.id },
+      data: { lobbyOwnerId: userId },
     });
     sendUpdatedLobby(user.joinedLobbyId);
   };
@@ -278,10 +282,31 @@ const leaveLobby = (socket: SocketServerSide) => {
       return;
     }
     const lobbyId = user.joinedLobbyId;
+    if (!lobbyId) {
+      return;
+    }
     await prisma.user.update({
       where: { id: user.id },
       data: { joinedLobbyId: null, ready: false },
     });
+    const lobby = await prisma.lobby.findFirst({
+      where: { id: lobbyId },
+      include: {
+        Users: {},
+      },
+    });
+    if ((lobby?.Users?.length ?? 0) === 0) {
+      await prisma.lobby.delete({
+        where: { id: lobbyId },
+      });
+    } else if (lobby?.lobbyOwnerId === user.id) {
+      const player = lobby.Users[0];
+      const ownerId = player ? player.id : null;
+      await prisma.lobby.update({
+        where: { id: lobbyId },
+        data: { lobbyOwnerId: ownerId },
+      });
+    }
     sendUpdatedLobbies();
     sendUpdatedLobby(lobbyId);
     updateUserData(socket);

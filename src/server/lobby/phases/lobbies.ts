@@ -3,6 +3,7 @@ import {
   sendUpdatedLobbies,
   sendUpdatedLobbiesToPlayer,
   sendUpdatedLobby,
+  updateUserData,
 } from "@/server/lobby/utility";
 import { SocketServerSide } from "@/server/types";
 import { GameTypes } from "@/shared/types/socket-communication/general";
@@ -63,6 +64,7 @@ const createLobby = (
         name: lobbyName,
         gameTypeId: gameTypeEntry.id,
         gameStarted: false,
+        lobbyOwnerId: user.id,
       },
     });
     await prisma.user.update({
@@ -71,10 +73,10 @@ const createLobby = (
       },
       data: {
         joinedLobbyId: lobby.id,
-        lobbyOwner: true,
       },
     });
     socket.emit("CreateLobbyResponseSuccess", { lobbyId: lobby.id });
+    updateUserData(socket);
     sendUpdatedLobbies();
   };
   asyncExecution();
@@ -126,6 +128,7 @@ const joinLobby = (
       },
     });
     socket.emit("JoinLobbyResponseSuccess", { lobbyId });
+    updateUserData(socket);
     sendUpdatedLobbies();
     sendUpdatedLobby(lobby.id);
   };

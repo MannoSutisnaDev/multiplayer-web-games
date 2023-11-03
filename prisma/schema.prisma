@@ -11,22 +11,24 @@ datasource db {
 }
 
 model User {
-  id            String   @id @default(cuid())
-  username      String   @unique
+  id            String  @id @default(cuid())
+  username      String  @unique
   joinedLobbyId String?
-  JoinedLobby   Lobby?   @relation(fields: [joinedLobbyId], references: [id])
-  lobbyOwner    Boolean?
-  connected     Boolean  @default(false)
-  ready         Boolean  @default(false)
+  JoinedLobby   Lobby?  @relation(fields: [joinedLobbyId], references: [id], name: "lobby_player")
+  connected     Boolean @default(false)
+  ready         Boolean @default(false)
+  LobbyItOwns   Lobby?  @relation("lobby_owner")
 }
 
 model Lobby {
-  id          String   @id @default(cuid())
-  name        String   @unique
-  gameTypeId  String
-  gameStarted Boolean
-  GameType    GameType @relation(fields: [gameTypeId], references: [id])
-  Users       User[]
+  id           String   @id @default(cuid())
+  name         String   @unique
+  gameTypeId   String
+  gameStarted  Boolean
+  lobbyOwnerId String?  @unique
+  LobbyOwner   User?    @relation(fields: [lobbyOwnerId], references: [id], name: "lobby_owner")
+  GameType     GameType @relation(fields: [gameTypeId], references: [id])
+  Users        User[]   @relation("lobby_player")
 }
 
 model GameType {

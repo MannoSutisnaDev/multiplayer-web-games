@@ -105,6 +105,18 @@ https://www.youtube.com/watch?v=KGXCiRf3E_I
 - leave logic uitbreiden
 - wanneer een speler is gedisconnect, de kans geven om terug te komen, anders het spel sluiten
 
+- als je een lobby aanmaakt en wordt verplaatst naar de lobby dan zie je de lijst van spelers niet verschijnen (gefixt)
+
 - checkers implementeren in de code base
 - chess implementeren in de code base
 - deployen
+
+Todo 2023-11-04:
+
+- Implementatie voor checkers phase maken
+- Pagina maken om naar toe te gaan nadat het spel is gestart
+- Indicatie tonen dat alle spelers klaar zijn om te starten
+- Terug kunnen gaan naar het lobbies overzicht
+- Als één speler leaved een modal tonen dat in X aantal seconden het spel zal worden geëindigd.
+  Als de speler weer terugkomt dan het eindigen cancellen.
+- Als het spel klaar is een modal tonen dat de spelers in X aantal seconden terug worden gestuurd naar de lobby

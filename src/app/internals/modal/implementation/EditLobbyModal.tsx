@@ -87,7 +87,6 @@ function EditLobbyModalPre({ lobby, close }: Props) {
             </option>
             {entries(GameTypesData).map((entry, index) => {
               const [key, gameData] = entry;
-              console.log({ key });
               return (
                 <option key={`game-type-${index}`} value={key}>
                   {gameData.name}

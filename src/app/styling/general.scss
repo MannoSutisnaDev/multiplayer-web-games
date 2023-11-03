@@ -178,9 +178,68 @@ body {
     .status {
       flex: 2;
     }
+    .options {
+      flex: 1;
+    }
+    .options-content {
+      display: flex;
+      justify-content: flex-end;
+      margin-right: 20px;
+    }
   }
 }
 
 button {
   cursor: pointer;
+}
+
+.dot-container {
+  position: relative;
+  .group-menu {
+    cursor: pointer;
+  }
+  .dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background-color: beige;
+    margin-top: 4px;
+  }
+  .frame {
+    position: absolute;
+    top: 40px;
+    width: 200px;
+    background: #111;
+    margin-top: 5px;
+    margin-left: -180px;
+    border-radius: 10px;
+    z-index: 10;
+
+    div {
+      &:first-child {
+        border-top-left-radius: 10px;
+        border-top-right-radius: 10px;
+      }
+      &:last-child {
+        border: none;
+        border-bottom-left-radius: 10px;
+        border-bottom-right-radius: 10px;
+      }
+    }
+
+    .info {
+      font-size: 16px;
+      color: white;
+      border-bottom: 1px solid white;
+      padding: 13px 0;
+      cursor: pointer;
+      &:hover,
+      &:focus {
+        background: #363333;
+      }
+      span {
+        margin-left: 10px;
+      }
+    }
+  }
 }

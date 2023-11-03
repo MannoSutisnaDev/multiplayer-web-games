@@ -32,6 +32,14 @@ export interface Phase {
   functions: Record<string, (...args: any[]) => void>;
 }
 
+const userWithLobbyItOwns = Prisma.validator<Prisma.UserDefaultArgs>()({
+  include: { LobbyItOwns: true },
+});
+
+export type UserWithLobbyItOwns = Prisma.UserGetPayload<
+  typeof userWithLobbyItOwns
+>;
+
 const lobbyWithGameType = Prisma.validator<Prisma.LobbyDefaultArgs>()({
   include: { GameType: true },
 });
@@ -41,7 +49,14 @@ export type LobbyWithGameType = Prisma.LobbyGetPayload<
 >;
 
 const lobbyWithGameTypeAndUsers = Prisma.validator<Prisma.LobbyDefaultArgs>()({
-  include: { Users: true, GameType: true },
+  include: {
+    Users: {
+      include: {
+        LobbyItOwns: true,
+      },
+    },
+    GameType: true,
+  },
 });
 
 export type LobbyWithGameTypeAndUsers = Prisma.LobbyGetPayload<

@@ -13,7 +13,6 @@ export default function RouteGuard({ children }: PropsWithChildren) {
     if (sessionId && lobbyId) {
       const path = `/lobbies/${lobbyId}`;
       if (pathname !== path) {
-        console.log("super strange.....");
         router.replace(path);
       }
     } else if (sessionId && !lobbyId) {

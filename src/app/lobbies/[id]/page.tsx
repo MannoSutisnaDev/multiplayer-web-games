@@ -2,6 +2,7 @@
 
 import { useContext, useEffect, useState } from "react";
 
+import ThreeDotsMenu from "@/app/components/ThreeDotsMenu";
 import EditLobbyModal from "@/app/internals/modal/implementation/EditLobbyModal";
 import { socket } from "@/app/internals/socket/socket";
 import { SocketContextWrapper } from "@/app/internals/socket/SocketContext";
@@ -10,7 +11,7 @@ import { LobbyWithGameTypeAndUsers } from "@/shared/types/socket-communication/t
 
 export default function Lobby() {
   const { addErrorMessage } = useContext(ToastMessageContextWrapper);
-  const { sessionId } = useContext(SocketContextWrapper);
+  const { sessionId, lobbyId } = useContext(SocketContextWrapper);
   const [lobby, setLobby] = useState<LobbyWithGameTypeAndUsers | null>(null);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [showModal, setShowModal] = useState<boolean>(false);
@@ -35,6 +36,10 @@ export default function Lobby() {
     };
   }, [addErrorMessage]);
 
+  const playerSelf = lobby?.Users?.find?.((player) => player.id === sessionId);
+
+  const playerIsOwner = playerSelf?.LobbyItOwns?.id === lobbyId;
+
   const title = lobby
     ? `Lobby "${lobby?.name}" | Game "${lobby.GameType.name}"`
     : "";
@@ -44,15 +49,31 @@ export default function Lobby() {
       return null;
     }
     const playerSelfClass = sessionId === player.id ? "player-self" : "";
+    const options: {
+      label: string;
+      function: () => void;
+    }[] = [
+      {
+        label: "Make user owner",
+        function: () => socket.emit("SetNewOwner", { userId: player.id }),
+      },
+      {
+        label: "Kick user",
+        function: () => socket.emit("KickUser", { userId: player.id }),
+      },
+    ];
     return (
       <div key={`player-${index}`} className="waiting-room-row player-row">
         <h2 className={`name ${playerSelfClass}`}>{player.username}</h2>
         <div className="status">{player.ready ? "Ready" : "Not ready"}</div>
+        <div className="options options-content">
+          {playerIsOwner && player.id !== sessionId && (
+            <ThreeDotsMenu options={options} />
+          )}
+        </div>
       </div>
     );
   });
-
-  const playerSelf = lobby?.Users?.find?.((player) => player.id === sessionId);
 
   const readyButton = (
     <button
@@ -83,7 +104,7 @@ export default function Lobby() {
 
   let startButton: React.ReactElement | null = null;
   let editLobbyButton: React.ReactElement | null = null;
-  if (playerSelf?.lobbyOwner) {
+  if (playerIsOwner) {
     startButton = (
       <button
         id="start"
@@ -127,6 +148,7 @@ export default function Lobby() {
             <div className="waiting-room-row player-row">
               <h2 className="name">Player name</h2>
               <h2 className="status">Status</h2>
+              <h2 className="options" />
             </div>
           </div>
           <div className="waiting-room-rows">{playerRows}</div>
