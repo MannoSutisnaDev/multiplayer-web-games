@@ -1,4 +1,4 @@
-import { GenericErrorResponseFunction } from "../general";
+import { GenericErrorResponseFunction, GenericResponseError } from "../general";
 
 export const EnterUsername = "EnterUsername";
 export const EnterUsernameResponseSuccess = "EnterUsernameResponseSuccess";
@@ -14,8 +14,9 @@ export interface PhaseEnterUsernameTypes {
     [EnterUsernameResponseSuccess]: ({
       sessionId,
     }: {
+      username: string;
       sessionId: string;
     }) => void;
-    [EnterUsernameResponseError]: GenericErrorResponseFunction;
+    [GenericResponseError]: GenericErrorResponseFunction;
   };
 }

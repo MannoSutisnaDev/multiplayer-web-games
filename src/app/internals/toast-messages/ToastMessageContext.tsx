@@ -1,22 +1,33 @@
-'use client'
+"use client";
 
-import { AnimatePresence } from 'framer-motion';
-import { createContext, PropsWithChildren, useCallback, useRef, useState } from 'react';
+import { AnimatePresence } from "framer-motion";
+import {
+  createContext,
+  PropsWithChildren,
+  useCallback,
+  useRef,
+  useState,
+} from "react";
 
-import { Message, MessageContextInterface } from '@/app/internals/toast-messages/types';
-import MessageComponent from './ToastMessageComponent';
+import {
+  Message,
+  MessageContextInterface,
+} from "@/app/internals/toast-messages/types";
 
-export const ToastMessageContextWrapper = createContext<MessageContextInterface>({
-  addMessageToQueue: null,
-  addErrorMessage: null,
-  addSuccessMessage: null
-});
+import MessageComponent from "./ToastMessageComponent";
+
+export const ToastMessageContextWrapper =
+  createContext<MessageContextInterface>({
+    addMessageToQueue: null,
+    addErrorMessage: null,
+    addSuccessMessage: null,
+  });
 
 export default function ToastMessageContext({ children }: PropsWithChildren) {
   const messagesRef = useRef<Message[]>([]);
   const [currentMessage, setCurrentMessage] = useState<Message | null>(null);
   const createMessage = useCallback(
-    (type: 'success' | 'error', main: string, sub?: string): Message => {
+    (type: "success" | "error", main: string, sub?: string): Message => {
       return {
         createdTimestamp: new Date().getTime(),
         type,
@@ -24,12 +35,12 @@ export default function ToastMessageContext({ children }: PropsWithChildren) {
         sub,
       };
     },
-    [],
+    []
   );
   const removeCurrentMessage = useCallback(async () => {
     const messages = messagesRef.current;
     await setCurrentMessage(null);
-    await new Promise<void>(res => setTimeout(() => res(), 500));
+    await new Promise<void>((res) => setTimeout(() => res(), 500));
     if (messages.length <= 0) {
       return;
     }
@@ -48,21 +59,21 @@ export default function ToastMessageContext({ children }: PropsWithChildren) {
         messagesRef.current = [...messagesRef.current, ...[message]];
       }
     },
-    [currentMessage],
+    [currentMessage]
   );
 
   const addSuccessMessage = useCallback(
     (mainText: string, subText?: string) => {
-      addMessageToQueue(createMessage('success', mainText, subText))
+      addMessageToQueue(createMessage("success", mainText, subText));
     },
     [addMessageToQueue, removeCurrentMessage, currentMessage?.type]
-  )
+  );
 
   const addErrorMessage = useCallback(
     (mainText: string, subText?: string) => {
-      addMessageToQueue(createMessage('error', mainText, subText));
+      addMessageToQueue(createMessage("error", mainText, subText));
     },
-    [addMessageToQueue, removeCurrentMessage, currentMessage?.type],
+    [addMessageToQueue, removeCurrentMessage, currentMessage?.type]
   );
   return (
     <>
@@ -70,12 +81,15 @@ export default function ToastMessageContext({ children }: PropsWithChildren) {
         value={{
           addMessageToQueue,
           addErrorMessage,
-          addSuccessMessage
+          addSuccessMessage,
         }}
       >
         <AnimatePresence mode="wait">
           {currentMessage && (
-            <MessageComponent message={currentMessage} removeMessage={removeCurrentMessage} />
+            <MessageComponent
+              message={currentMessage}
+              removeMessage={removeCurrentMessage}
+            />
           )}
         </AnimatePresence>
         {children}

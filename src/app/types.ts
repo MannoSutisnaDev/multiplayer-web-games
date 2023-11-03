@@ -13,3 +13,8 @@ export interface SocketClientSide
     gameIsPlaying?: boolean;
   };
 }
+
+export interface BaseModalProps {
+  show: boolean;
+  close: () => void;
+}

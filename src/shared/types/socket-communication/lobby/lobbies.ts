@@ -1,14 +1,14 @@
-import { GenericErrorResponseFunction } from "../general";
+import { GenericErrorResponseFunction, GenericResponseError } from "../general";
 
 export const JoinLobby = "JoinLobby";
 export const JoinLobbyResponseSuccess = "JoinLobbyResponseSuccess";
-export const JoinLobbyResponseError = "JoinLobbyResponseError";
 
 export const CreateLobby = "CreateLobby";
 export const CreateLobbyResponseSuccess = "CreateLobbyResponseSuccess";
 export const CreateLobbyResponseError = "CreateLobbyResponseError";
 
-export const UpdateLobbiesListResponse = "UpdateLobbiesListResponse";
+export const RequestUpdateLobbies = "RequestUpdateLobbies";
+export const UpdateLobbiesResponse = "UpdateLobbiesResponse";
 
 export const PhaseIdLobbies = "lobbies";
 import { LobbyWithGameTypeAndUsers } from "@/shared/types/socket-communication/types";
@@ -25,16 +25,17 @@ export interface PhaseLobbiesTypes {
       gameType: GameTypes;
     }) => void;
     [JoinLobby]: ({ lobbyId }: { lobbyId: string }) => void;
+    [RequestUpdateLobbies]: () => void;
   };
   ServerToClient: {
-    [JoinLobbyResponseSuccess]: () => void;
-    [JoinLobbyResponseError]: GenericErrorResponseFunction;
+    [JoinLobbyResponseSuccess]: ({ lobbyId }: { lobbyId: string }) => void;
     [CreateLobbyResponseSuccess]: ({ lobbyId }: { lobbyId: string }) => void;
-    [CreateLobbyResponseError]: GenericErrorResponseFunction;
-    [UpdateLobbiesListResponse]: ({
+    [UpdateLobbiesResponse]: ({
       lobbies,
     }: {
       lobbies: LobbyWithGameTypeAndUsers[];
     }) => void;
+    [GenericResponseError]: GenericErrorResponseFunction;
+    [CreateLobbyResponseError]: GenericErrorResponseFunction;
   };
 }

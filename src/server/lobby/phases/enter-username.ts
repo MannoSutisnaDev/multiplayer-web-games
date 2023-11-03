@@ -20,7 +20,7 @@ const enterUsername = (
     });
 
     if (user) {
-      socket.emit("EnterUsernameResponseError", {
+      socket.emit("GenericResponseError", {
         error: "Username already exists.",
       });
       return;
@@ -29,11 +29,15 @@ const enterUsername = (
     user = await prisma.user.create({
       data: {
         username,
+        connected: true,
       },
     });
     socket.data.sessionId = user.id;
     setPhase(socket, PhaseLobbies);
-    socket.emit("EnterUsernameResponseSuccess", { sessionId: user.id });
+    socket.emit("EnterUsernameResponseSuccess", {
+      sessionId: user.id,
+      username,
+    });
   };
   asyncExecution();
 };

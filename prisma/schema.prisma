@@ -16,14 +16,17 @@ model User {
   joinedLobbyId String?
   JoinedLobby   Lobby?   @relation(fields: [joinedLobbyId], references: [id])
   lobbyOwner    Boolean?
+  connected     Boolean  @default(false)
+  ready         Boolean  @default(false)
 }
 
 model Lobby {
-  id         String   @id @default(cuid())
-  name       String   @unique
-  gameTypeId String
-  GameType   GameType @relation(fields: [gameTypeId], references: [id])
-  Users      User[]
+  id          String   @id @default(cuid())
+  name        String   @unique
+  gameTypeId  String
+  gameStarted Boolean
+  GameType    GameType @relation(fields: [gameTypeId], references: [id])
+  Users       User[]
 }
 
 model GameType {

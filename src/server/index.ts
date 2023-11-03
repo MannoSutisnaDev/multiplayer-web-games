@@ -1,11 +1,7 @@
-import { Lobby } from "@prisma/client";
 import next, { NextApiHandler } from "next";
 
-import prisma from "@/server/db";
 import { app, io, server } from "@/server/init";
-import { setPhase } from "@/server/lobby/phases/adjust-phase";
-import { PhaseEnterUsername } from "@/server/lobby/phases/enter-username";
-import { PhaseLobbies } from "@/server/lobby/phases/lobbies";
+import { handleDisconnect, updateUserData } from "@/server/lobby/utility";
 import { SocketServerSide } from "@/server/types";
 
 const port: number = parseInt(process.env.PORT || "3000", 10);
@@ -15,37 +11,10 @@ const nextHandler: NextApiHandler = nextApp.getRequestHandler();
 
 nextApp.prepare().then(async () => {
   io.on("connection", (socket: SocketServerSide) => {
-    const asyncExecution = async () => {
-      const sessionId = socket.handshake.auth?.sessionId;
-      const user = await prisma.user.findFirst({
-        where: {
-          id: { equals: sessionId },
-        },
-      });
-      if (!sessionId || !user) {
-        setPhase(socket, PhaseEnterUsername);
-        return;
-      }
-      let lobby: Lobby | null = null;
-      if (user.joinedLobbyId) {
-        lobby = await prisma.lobby.findFirst({
-          where: { id: user.joinedLobbyId },
-        });
-      }
-      socket.data.sessionId = sessionId;
-      if (!lobby) {
-        setPhase(socket, PhaseLobbies);
-      } else {
-        //Todo
-      }
-      socket.emit("UpdateUserData", {
-        sessionId,
-        lobbyId: lobby?.id,
-      });
-    };
-    asyncExecution();
-
+    socket.data.sessionId = socket.handshake.auth?.sessionId;
+    updateUserData(socket);
     socket.on("disconnect", () => {
+      handleDisconnect(socket);
       console.log(`Disconected: ${socket.data?.sessionId}`);
     });
   });

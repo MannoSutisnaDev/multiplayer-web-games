@@ -5,21 +5,40 @@ import {
   PhaseIdEnterUsername,
 } from "@/shared/types/socket-communication/lobby/enter-username";
 import { GeneralSocketFunctions } from "@/shared/types/socket-communication/lobby/general";
-import { PhaseIdLobbies } from "@/shared/types/socket-communication/lobby/lobbies";
-import { PhaseLobbiesTypes } from "@/shared/types/socket-communication/lobby/lobbies";
+import {
+  PhaseIdLobbies,
+  PhaseLobbiesTypes,
+} from "@/shared/types/socket-communication/lobby/lobbies";
+import {
+  PhaseIdLobby,
+  PhaseLobbyTypes,
+} from "@/shared/types/socket-communication/lobby/lobby";
 
 export type ServerToClientEvents = GeneralSocketFunctions["ServerToClient"] &
   PhaseEnterUsernameTypes["ServerToClient"] &
-  PhaseLobbiesTypes["ServerToClient"];
+  PhaseLobbiesTypes["ServerToClient"] &
+  PhaseLobbyTypes["ServerToClient"];
 export type ClientToServerEvents = PhaseEnterUsernameTypes["ClientToServer"] &
-  PhaseLobbiesTypes["ClientToServer"];
+  PhaseLobbiesTypes["ClientToServer"] &
+  PhaseLobbyTypes["ClientToServer"];
 
-type PhaseIds = typeof PhaseIdEnterUsername | typeof PhaseIdLobbies;
+type PhaseIds =
+  | typeof PhaseIdEnterUsername
+  | typeof PhaseIdLobbies
+  | typeof PhaseIdLobby;
 
 export interface Phase {
   id: PhaseIds;
   functions: Record<string, (...args: any[]) => void>;
 }
+
+const lobbyWithGameType = Prisma.validator<Prisma.LobbyDefaultArgs>()({
+  include: { GameType: true },
+});
+
+export type LobbyWithGameType = Prisma.LobbyGetPayload<
+  typeof lobbyWithGameType
+>;
 
 const lobbyWithGameTypeAndUsers = Prisma.validator<Prisma.LobbyDefaultArgs>()({
   include: { Users: true, GameType: true },

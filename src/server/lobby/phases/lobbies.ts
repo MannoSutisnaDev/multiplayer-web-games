@@ -1,10 +1,16 @@
 import prisma from "@/server/db";
+import {
+  sendUpdatedLobbies,
+  sendUpdatedLobbiesToPlayer,
+  sendUpdatedLobby,
+} from "@/server/lobby/utility";
 import { SocketServerSide } from "@/server/types";
 import { GameTypes } from "@/shared/types/socket-communication/general";
 import {
   CreateLobby,
   JoinLobby,
   PhaseIdLobbies,
+  RequestUpdateLobbies,
 } from "@/shared/types/socket-communication/lobby/lobbies";
 import { Phase } from "@/shared/types/socket-communication/types";
 
@@ -41,10 +47,22 @@ const createLobby = (
       });
       return;
     }
+    const gameTypeEntry = await prisma.gameType.findFirst({
+      where: {
+        name: gameType,
+      },
+    });
+    if (!gameTypeEntry) {
+      socket.emit("CreateLobbyResponseError", {
+        error: "Invalid game type selected.",
+      });
+      return;
+    }
     lobby = await prisma.lobby.create({
       data: {
         name: lobbyName,
-        gameTypeId: gameType,
+        gameTypeId: gameTypeEntry.id,
+        gameStarted: false,
       },
     });
     await prisma.user.update({
@@ -57,6 +75,7 @@ const createLobby = (
       },
     });
     socket.emit("CreateLobbyResponseSuccess", { lobbyId: lobby.id });
+    sendUpdatedLobbies();
   };
   asyncExecution();
 };
@@ -72,7 +91,7 @@ const joinLobby = (
       },
     });
     if (!user) {
-      socket.emit("JoinLobbyResponseError", {
+      socket.emit("GenericResponseError", {
         error: "User does not exist.",
       });
       return;
@@ -87,13 +106,13 @@ const joinLobby = (
       },
     });
     if (!lobby) {
-      socket.emit("JoinLobbyResponseError", {
+      socket.emit("GenericResponseError", {
         error: "Lobby does not exist.",
       });
       return;
     }
-    if (lobby.Users.length + 1 >= lobby.GameType.maxPlayers) {
-      socket.emit("JoinLobbyResponseError", {
+    if (lobby.Users.length + 1 > lobby.GameType.maxPlayers) {
+      socket.emit("GenericResponseError", {
         error: "Lobby is full.",
       });
       return;
@@ -106,9 +125,15 @@ const joinLobby = (
         joinedLobbyId: lobby.id,
       },
     });
-    socket.emit("JoinLobbyResponseSuccess");
+    socket.emit("JoinLobbyResponseSuccess", { lobbyId });
+    sendUpdatedLobbies();
+    sendUpdatedLobby(lobby.id);
   };
   asyncExecution();
+};
+
+const requestUpdateLobbies = (socket: SocketServerSide) => {
+  sendUpdatedLobbiesToPlayer(socket);
 };
 
 export const PhaseLobbies: Phase = {
@@ -116,5 +141,6 @@ export const PhaseLobbies: Phase = {
   functions: {
     [CreateLobby]: createLobby,
     [JoinLobby]: joinLobby,
+    [RequestUpdateLobbies]: requestUpdateLobbies,
   },
 };

@@ -69,3 +69,42 @@ Het spel leaven
 
 Create perfect software developer resume:
 https://www.youtube.com/watch?v=GyjzOKdaioU
+
+Fundamentals fixen
+
+- Styling lobbies (oude code implementeren)
+- Styling lobby (oude code implementeren)
+- Lobby aanmaken
+- Lobby aanpassen
+- Lobby leaven
+- Lobby starten
+- Updates sturen naar alle spelers
+- Nieuwe lobby leader maken
+- Lobby verwijderen als niemand er meer in zit
+- Van spel teruggaan naar lobby
+
+- Checkers overzetten naar nieuwe code base
+- Spectator mode fixen
+
+On the Clouds (Ambient, Jungle, Jazzy, 90s DNB Mix)
+https://www.youtube.com/watch?v=0LJSboJeNqw
+
+Todo:
+
+Three dots menu:
+https://www.youtube.com/watch?v=KGXCiRf3E_I
+
+- three dots menu
+- user kicken
+- user owner maken
+- als een speler disconnect of connect de lobbies en lobby updaten
+- spel starten en naar de volgende pagina gaan
+- spel verlaten wanneer het is gestart
+- een modal tonen dat het spel in 10 seconden verwijderd gaat worden
+- join button alleen klikbaar maken als het spel niet al bezig is en er niet al het max aantal spelers in zit
+- leave logic uitbreiden
+- wanneer een speler is gedisconnect, de kans geven om terug te komen, anders het spel sluiten
+
+- checkers implementeren in de code base
+- chess implementeren in de code base
+- deployen

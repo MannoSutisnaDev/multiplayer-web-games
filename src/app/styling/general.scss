@@ -1,0 +1,186 @@
+html,
+button {
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+body {
+  width: 100vw;
+  height: 100vh;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: black;
+  color: white;
+}
+
+.enter-username {
+  height: 100%;
+  width: 100%;
+  font-family: "Helvetica", "Arial", sans-serif;
+  background-color: #4488aa;
+
+  .title {
+    display: flex;
+    justify-content: center;
+  }
+
+  .sub-title {
+    display: flex;
+    justify-content: center;
+    margin-top: 50px;
+  }
+
+  .submit-button {
+    margin-top: 20px;
+    cursor: pointer;
+  }
+
+  .container {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .submit-button .disabled {
+    background-color: dimgrey;
+  }
+
+  .username-input .disabled {
+    background-color: dimgrey;
+  }
+}
+
+.waiting-room-body {
+  width: 90vw;
+  height: 80vh;
+  margin-top: 20px;
+  display: flex;
+  justify-content: center;
+  font-family: "Helvetica", "Arial", sans-serif;
+
+  .waiting-room-info {
+    border: solid black 1px;
+    position: relative;
+    border-bottom: 1px solid white;
+    background: rgba(0, 0, 0, 0.5);
+  }
+
+  .waiting-room-title {
+    margin: 10px;
+    color: white;
+  }
+
+  .waiting-room-container {
+    border: 1px solid white;
+    width: 90%;
+    height: 500px;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .waiting-room-columns {
+    .waiting-room-row {
+      background: initial;
+      height: initial;
+      > h2 {
+        margin-top: 0px;
+        margin-bottom: 0px;
+      }
+    }
+  }
+
+  .waiting-room-rows {
+    padding-top: 5px;
+    flex: 1;
+    background: rgba(0, 0, 0, 0.5);
+  }
+
+  .waiting-room-row {
+    color: white;
+    margin-top: 20px;
+    background: rgba(0, 0, 0, 0.7);
+    border-radius: 13px;
+    height: 50px;
+    margin: 5px;
+    display: flex;
+    align-items: center;
+  }
+
+  .waiting-room-row {
+    > h2:first-child {
+      margin-left: 10px;
+    }
+  }
+
+  .button-section {
+    margin: 10px;
+    display: flex;
+    column-gap: 10px;
+    button {
+      padding: 10px;
+      background: #301934;
+      color: white;
+    }
+
+    &.left-right {
+      display: flex;
+      justify-content: space-between;
+      .left-section,
+      .right-section {
+        display: flex;
+        column-gap: 10px;
+      }
+    }
+  }
+}
+
+.lobbies-body {
+  .lobbies-container {
+    background: #c68793;
+  }
+  .lobby-row {
+    .lobby-name {
+      flex: 2;
+      word-break: break-word;
+    }
+    .game-name {
+      flex: 1;
+    }
+    .player-info {
+      flex: 1;
+    }
+    .join {
+      flex: 1;
+      > button {
+        background: #938ac6;
+        color: #fffefd;
+        padding: 10px 20px 10px 20px;
+      }
+    }
+  }
+}
+
+.lobby-body {
+  .lobby-container {
+    background: purple;
+  }
+  .player-row {
+    .player-self {
+      color: #0096ff;
+    }
+    .name {
+      flex: 1;
+    }
+    .status {
+      flex: 2;
+    }
+  }
+}
+
+button {
+  cursor: pointer;
+}

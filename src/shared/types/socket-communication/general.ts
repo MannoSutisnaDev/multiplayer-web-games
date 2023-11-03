@@ -1,3 +1,5 @@
+export const GenericResponseError = "GenericResponseError";
+
 export type GenericErrorResponseFunction = ({
   error,
 }: {
