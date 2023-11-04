@@ -1,11 +1,10 @@
-import "@/app/styling/main.scss";
+import "@/client/styling/main.scss";
 
 import type { Metadata } from "next";
 
-import RouteGuard from "@/app/internals/route-guard/RouteGuard";
-
-import SocketContext from "./internals/socket/SocketContext";
-import ToastMessageContext from "./internals/toast-messages/ToastMessageContext";
+import RouteGuard from "@/client/internals/route-guard/RouteGuard";
+import SocketContext from "@/client/internals/socket/SocketContext";
+import ToastMessageContext from "@/client/internals/toast-messages/ToastMessageContext";
 
 export const metadata: Metadata = {
   title: "Multiplayer Web Games",

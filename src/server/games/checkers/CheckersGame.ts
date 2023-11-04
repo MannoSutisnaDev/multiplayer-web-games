@@ -4,8 +4,16 @@ import { SocketServerSide } from "@/server/types";
 import { OriginTargetPayload } from "@/shared/types/socket-communication/games/checkers/game";
 
 export default class CheckersGame extends BaseGameModel<BasePlayerModel> {
+  gameData: {
+    initialized: boolean;
+  } | null = null;
   constructor(key: string, playerIds: string[]) {
     super(key, playerIds);
+    this.initializeGame();
+  }
+
+  initializeGame() {
+    this.gameData = { initialized: true };
   }
 
   initializePlayers(playerIds: string[]): void {
@@ -17,13 +25,19 @@ export default class CheckersGame extends BaseGameModel<BasePlayerModel> {
   }
 
   initializeGameImplementation(): void {
-    throw new Error("Method not implemented.");
+    this.gameData = {
+      initialized: true,
+    };
   }
   sendGameStatePayload(socket: SocketServerSide): void {
-    throw new Error("Method not implemented.");
+    if (this.gameData === null) {
+      return;
+    }
+    socket.emit("CheckersGameStateUpdateResponse", this.gameData);
   }
+
   startGame(): void {
-    throw new Error("Method not implemented.");
+    this.sendGameState();
   }
 
   movePiece(payload: OriginTargetPayload) {}

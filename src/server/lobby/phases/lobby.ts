@@ -5,6 +5,7 @@ import {
   findUser,
   findUserWithLobbyItOwns,
   getSocketByUserId,
+  getSocketsByUserIds,
   sendUpdatedLobbies,
   sendUpdatedLobby,
   sendUpdateLobbyToPlayer,
@@ -67,6 +68,7 @@ const verifyIfUserIsOwner = async (
     include: {
       GameType: {},
       Users: {
+        where: { connected: true },
         include: {
           LobbyItOwns: {},
         },
@@ -104,7 +106,7 @@ const startGame = (socket: SocketServerSide) => {
     if (!isOwnerData) {
       return;
     }
-    const { user, lobby } = isOwnerData;
+    const { lobby } = isOwnerData;
     let readyCount = 0;
     for (const user of lobby.Users) {
       if (user.ready) {
@@ -142,7 +144,11 @@ const startGame = (socket: SocketServerSide) => {
       where: { id: lobby.id },
       data: { gameStarted: true },
     });
-    sendUpdatedLobby(user.joinedLobbyId);
+    const playerIds = lobby.Users.map((user) => user.id);
+    const sockets = getSocketsByUserIds(playerIds);
+    for (const socket of sockets) {
+      updateUserData(socket);
+    }
     sendUpdatedLobbies();
   };
   asyncExecution();
@@ -293,7 +299,9 @@ const leaveLobby = (socket: SocketServerSide) => {
     const lobby = await prisma.lobby.findFirst({
       where: { id: lobbyId },
       include: {
-        Users: {},
+        Users: {
+          where: { connected: true },
+        },
       },
     });
     if ((lobby?.Users?.length ?? 0) === 0) {

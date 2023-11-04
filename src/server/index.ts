@@ -1,7 +1,13 @@
 import next, { NextApiHandler } from "next";
 
+import prisma from "@/server/db";
 import { app, io, server } from "@/server/init";
-import { updateUserData } from "@/server/lobby/utility";
+import {
+  findUser,
+  sendUpdatedLobbies,
+  sendUpdatedLobby,
+  updateUserData,
+} from "@/server/lobby/utility";
 import { SocketServerSide } from "@/server/types";
 
 const port: number = parseInt(process.env.PORT || "3000", 10);
@@ -12,7 +18,20 @@ const nextHandler: NextApiHandler = nextApp.getRequestHandler();
 nextApp.prepare().then(async () => {
   io.on("connection", (socket: SocketServerSide) => {
     socket.data.sessionId = socket.handshake.auth?.sessionId;
-    updateUserData(socket);
+    const asyncExecution = async () => {
+      const user = await findUser(socket);
+      if (!user || !user.joinedLobbyId) {
+        return;
+      }
+      updateUserData(socket);
+      await prisma.user.update({
+        where: { id: user.id },
+        data: { connected: true },
+      });
+      sendUpdatedLobby(user.joinedLobbyId);
+      sendUpdatedLobbies();
+    };
+    asyncExecution();
   });
 
   app.all("*", (req: any, res: any) => nextHandler(req, res));

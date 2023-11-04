@@ -9,6 +9,7 @@ const createCheckersGame = (id: string, playerIds: string[]) => {
     throw new Error("Game with lobby ID already exists.");
   }
   checkersRepository.save(new CheckersGame(id, playerIds));
+  const game = checkersRepository.findOne(id);
 };
 
 export { checkersRepository, createCheckersGame };

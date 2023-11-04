@@ -73,9 +73,6 @@ export default function Lobbies() {
           <div className="waiting-room-rows">
             {lobbies.map((lobby, index) => {
               const { name, GameType, Users } = lobby;
-              const connectedPlayers = Users.filter(
-                (player) => player.connected
-              );
               return (
                 <div
                   key={`lobby-${index}`}
@@ -84,7 +81,7 @@ export default function Lobbies() {
                   <h2 className="lobby-name">{name}</h2>
                   <div className="game-name">{GameType.name}</div>
                   <div className="player-info">
-                    {connectedPlayers.length ?? 0} / {GameType.maxPlayers}
+                    {Users.length ?? 0} / {GameType.maxPlayers}
                   </div>
                   <div className="join" onClick={() => joinLobby(lobby.id)}>
                     <button className="btn">Join</button>

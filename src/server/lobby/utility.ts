@@ -69,10 +69,6 @@ export const updateUserData = async (socket: SocketServerSide) => {
     });
     return;
   }
-  await prisma.user.update({
-    where: { id: user.id },
-    data: { connected: true },
-  });
   let lobby: LobbyWithGameType | null = null;
   if (user.joinedLobbyId) {
     lobby = await findLobby(user.joinedLobbyId);
@@ -89,7 +85,8 @@ export const updateUserData = async (socket: SocketServerSide) => {
         break;
     }
   }
-  const gameType: GameTypes | null = (lobby?.GameType?.id as GameTypes) ?? null;
+  const gameType: GameTypes | null =
+    (lobby?.GameType?.name as GameTypes) ?? null;
   socket.emit("UpdateUserData", {
     username: user.username,
     sessionId,
@@ -103,6 +100,7 @@ export const sendUpdatedLobbies = async () => {
     include: {
       GameType: {},
       Users: {
+        where: { connected: true },
         include: {
           LobbyItOwns: {},
         },
@@ -165,46 +163,7 @@ export const getSocketsByUserIds = (userIds: string[]): SocketServerSide[] => {
   return sockets;
 };
 
-export const sendUpdateLobbyToPlayer = async (socket: SocketServerSide) => {
-  const user = await findUser(socket);
-  if (!user || !user.joinedLobbyId) {
-    return;
-  }
-  const lobby = await prisma.lobby.findFirst({
-    where: {
-      id: user.joinedLobbyId,
-    },
-    include: {
-      GameType: {},
-      Users: {
-        include: {
-          LobbyItOwns: {},
-        },
-      },
-    },
-  });
-
-  lobby?.Users?.sort?.((a, b) => {
-    const aValue = a?.LobbyItOwns ? 1 : 0;
-    const bValue = b?.LobbyItOwns ? 1 : 0;
-    if (aValue > bValue) {
-      return -1;
-    } else if (aValue < bValue) {
-      return 1;
-    }
-    return 0;
-  });
-  if (!lobby) {
-    return;
-  }
-  socket.emit("UpdateLobbyResponse", { lobby });
-};
-
-export const sendUpdatedLobby = async (lobbyId: string | null) => {
-  if (!lobbyId) {
-    return;
-  }
-  const indexedSockets = getSocketsIndexed();
+const createLobbyPayload = async (lobbyId: string) => {
   const lobby = await prisma.lobby.findFirst({
     where: {
       id: lobbyId,
@@ -212,13 +171,17 @@ export const sendUpdatedLobby = async (lobbyId: string | null) => {
     include: {
       GameType: {},
       Users: {
+        where: { connected: true },
         include: {
           LobbyItOwns: {},
         },
       },
     },
   });
-  lobby?.Users?.sort?.((a, b) => {
+  if (!lobby) {
+    return null;
+  }
+  lobby.Users?.sort?.((a, b) => {
     const aValue = a?.LobbyItOwns ? 1 : 0;
     const bValue = b?.LobbyItOwns ? 1 : 0;
     if (aValue > bValue) {
@@ -228,15 +191,36 @@ export const sendUpdatedLobby = async (lobbyId: string | null) => {
     }
     return 0;
   });
-  if (!lobby) {
+  return lobby;
+};
+
+export const sendUpdateLobbyToPlayer = async (socket: SocketServerSide) => {
+  const user = await findUser(socket);
+  if (!user || !user.joinedLobbyId) {
     return;
   }
-  for (const user of lobby.Users) {
+  const lobbyPayload = await createLobbyPayload(user.joinedLobbyId);
+  if (!lobbyPayload) {
+    return;
+  }
+  socket.emit("UpdateLobbyResponse", { lobby: lobbyPayload });
+};
+
+export const sendUpdatedLobby = async (lobbyId: string | null) => {
+  if (!lobbyId) {
+    return;
+  }
+  const indexedSockets = getSocketsIndexed();
+  const lobbyPayload = await createLobbyPayload(lobbyId);
+  if (!lobbyPayload) {
+    return;
+  }
+  for (const user of lobbyPayload.Users) {
     const socket = indexedSockets[user.id];
     if (!socket) {
       continue;
     }
-    socket.emit("UpdateLobbyResponse", { lobby });
+    socket.emit("UpdateLobbyResponse", { lobby: lobbyPayload });
   }
 };
 
@@ -245,10 +229,14 @@ export const handleDisconnect = async (socket: SocketServerSide) => {
   if (!user) {
     return;
   }
-  prisma.user.update({
+  await prisma.user.update({
     where: { id: user.id },
     data: {
       connected: false,
     },
   });
+  if (user.joinedLobbyId) {
+    sendUpdatedLobbies();
+    sendUpdatedLobby(user.joinedLobbyId);
+  }
 };

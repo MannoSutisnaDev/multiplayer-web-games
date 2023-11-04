@@ -7,7 +7,8 @@ export const MovePiece = "MovePiece";
 export const ReadyToPlay = "ReadyToPlay";
 export const LeaveGame = "LeaveGame";
 
-export const GameStateUpdateResponse = "GameStateUpdateResponse";
+export const CheckersGameStateUpdateResponse =
+  "CheckersGameStateUpdateResponse";
 
 export const PhaseIdCheckers = "checkers";
 
@@ -29,7 +30,11 @@ export interface PhaseCheckersTypes {
     [LeaveGame]: () => void;
   };
   ServerToClient: {
-    [GameStateUpdateResponse]: ({ data }: any) => void;
+    [CheckersGameStateUpdateResponse]: ({
+      initialized,
+    }: {
+      initialized: boolean;
+    }) => void;
     [GenericResponseError]: GenericErrorResponseFunction;
   };
 }

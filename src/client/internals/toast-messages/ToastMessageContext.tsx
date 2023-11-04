@@ -25,6 +25,7 @@ export const ToastMessageContextWrapper =
 
 export default function ToastMessageContext({ children }: PropsWithChildren) {
   const messagesRef = useRef<Message[]>([]);
+  const currentMessageRef = useRef<Message | null>(null);
   const [currentMessage, setCurrentMessage] = useState<Message | null>(null);
   const createMessage = useCallback(
     (type: "success" | "error", main: string, sub?: string): Message => {
@@ -37,9 +38,15 @@ export default function ToastMessageContext({ children }: PropsWithChildren) {
     },
     []
   );
+
+  const setCurrentMessageFull = useCallback(async (message: Message | null) => {
+    await setCurrentMessage(message);
+    currentMessageRef.current = message;
+  }, []);
+
   const removeCurrentMessage = useCallback(async () => {
     const messages = messagesRef.current;
-    await setCurrentMessage(null);
+    setCurrentMessageFull(null);
     await new Promise<void>((res) => setTimeout(() => res(), 500));
     if (messages.length <= 0) {
       return;
@@ -48,33 +55,34 @@ export default function ToastMessageContext({ children }: PropsWithChildren) {
     if (!newMessage) {
       return;
     }
-    setCurrentMessage(newMessage);
-  }, []);
+    setCurrentMessageFull(newMessage);
+  }, [setCurrentMessageFull]);
 
   const addMessageToQueue = useCallback(
     (message: Message) => {
-      if (currentMessage === null) {
-        setCurrentMessage(message);
+      if (currentMessageRef.current === null) {
+        setCurrentMessageFull(message);
       } else {
         messagesRef.current = [...messagesRef.current, ...[message]];
       }
     },
-    [currentMessage]
+    [setCurrentMessageFull]
   );
 
   const addSuccessMessage = useCallback(
     (mainText: string, subText?: string) => {
       addMessageToQueue(createMessage("success", mainText, subText));
     },
-    [addMessageToQueue, removeCurrentMessage, currentMessage?.type]
+    [addMessageToQueue, createMessage]
   );
 
   const addErrorMessage = useCallback(
     (mainText: string, subText?: string) => {
       addMessageToQueue(createMessage("error", mainText, subText));
     },
-    [addMessageToQueue, removeCurrentMessage, currentMessage?.type]
+    [addMessageToQueue, createMessage]
   );
+
   return (
     <>
       <ToastMessageContextWrapper.Provider

@@ -17,8 +17,6 @@ export default abstract class BaseGameModel<
 
   abstract initializePlayers(playerIds: string[]): void;
 
-  abstract initializeGameImplementation(): void;
-
   abstract startGame(): void;
 
   abstract sendGameStatePayload(socket: SocketServerSide): void;
@@ -34,7 +32,8 @@ export default abstract class BaseGameModel<
     }
     player.ready = true;
     const readyPlayers = this.players.filter((player) => player.ready);
-    if (readyPlayers.length === this.players.length) {
+    if (!this.gameStarted && readyPlayers.length === this.players.length) {
+      this.gameStarted = true;
       this.startGame();
     }
     return true;
@@ -54,11 +53,5 @@ export default abstract class BaseGameModel<
 
   leaveGame(playerId: string) {
     //TODO
-  }
-
-  intializeGame() {
-    this.initializeGameImplementation();
-    this.gameStarted = true;
-    this.sendGameState();
   }
 }
