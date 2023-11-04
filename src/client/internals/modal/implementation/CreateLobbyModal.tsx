@@ -4,51 +4,45 @@ import { useRouter } from "next/navigation";
 import { useContext, useState } from "react";
 import { useEffect } from "react";
 
-import ModalWrapper from "@/app/internals/modal/ModalWrapper";
-import { socket } from "@/app/internals/socket/socket";
-import { SocketContextWrapper } from "@/app/internals/socket/SocketContext";
-import { ToastMessageContextWrapper } from "@/app/internals/toast-messages/ToastMessageContext";
-import { BaseModalProps } from "@/app/types";
+import ModalWrapper from "@/client/internals/modal/ModalWrapper";
+import { socket } from "@/client/internals/socket/socket";
+import { SocketContextWrapper } from "@/client/internals/socket/SocketContext";
+import { ToastMessageContextWrapper } from "@/client/internals/toast-messages/ToastMessageContext";
+import { BaseModalProps } from "@/client/types";
 import { GameTypesData } from "@/shared/types/socket-communication/general";
 import { GameTypes } from "@/shared/types/socket-communication/general";
-import { LobbyWithGameTypeAndUsers } from "@/shared/types/socket-communication/types";
 import { entries } from "@/shared/utility";
 
-interface Props extends BaseModalProps {
-  lobby: LobbyWithGameTypeAndUsers | null;
-}
-
-function EditLobbyModalPre({ lobby, close }: Props) {
+function CreateLobbyModalPre({ close }: BaseModalProps) {
   const { addErrorMessage } = useContext(ToastMessageContextWrapper);
   const { setLobbyId } = useContext(SocketContextWrapper);
   const router = useRouter();
 
-  const [lobbyName, setLobbyName] = useState(lobby?.name ?? "");
-  const [gameType, setGameType] = useState(lobby?.GameType.name ?? "");
+  const [lobbyName, setLobbyName] = useState("");
+  const [gameType, setGameType] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
-    socket.on("EditLobbyResponseSuccess", () => {
+    socket.on("CreateLobbyResponseSuccess", ({ lobbyId }) => {
       setIsSubmitting(false);
-      close();
+      if (!lobbyId) {
+        return;
+      }
+      setLobbyId(lobbyId);
     });
-    socket.on("EditLobbyResponseError", ({ error }) => {
+    socket.on("CreateLobbyResponseError", ({ error }) => {
       setIsSubmitting(false);
       addErrorMessage?.(error);
     });
     return () => {
-      socket.removeAllListeners("EditLobbyResponseSuccess");
-      socket.removeAllListeners("EditLobbyResponseError");
+      socket.removeAllListeners("CreateLobbyResponseSuccess");
+      socket.removeAllListeners("CreateLobbyResponseError");
     };
-  }, [addErrorMessage, close, router, setLobbyId]);
-
-  if (!lobby) {
-    return lobby;
-  }
+  }, [addErrorMessage, router, setLobbyId]);
 
   return (
     <div className="create-edit-lobby-modal">
-      <h1>{`Edit lobby "${lobby.name}"`}</h1>
+      <h1>Create lobby</h1>
       <span
         className="close"
         onClick={(e) => {
@@ -109,7 +103,7 @@ function EditLobbyModalPre({ lobby, close }: Props) {
             return;
           }
           setIsSubmitting(true);
-          socket.emit("EditLobby", {
+          socket.emit("CreateLobby", {
             lobbyName,
             gameType: gameType as GameTypes,
           });
@@ -122,8 +116,8 @@ function EditLobbyModalPre({ lobby, close }: Props) {
   );
 }
 
-const EditLobbyModalWrapped = ModalWrapper(EditLobbyModalPre);
+const CreateLobbyModalWrapped = ModalWrapper(CreateLobbyModalPre);
 
-export default function EditLobbyModal(props: Props) {
-  return <EditLobbyModalWrapped {...props} />;
+export default function CreateLobbyModal(props: BaseModalProps) {
+  return <CreateLobbyModalWrapped {...props} />;
 }

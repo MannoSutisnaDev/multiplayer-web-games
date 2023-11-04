@@ -1,49 +1,86 @@
 import prisma from "@/server/db";
-import { updateUserData } from "@/server/lobby/utility";
+import { checkersRepository } from "@/server/games/checkers/CheckersRepository";
+import { setPhase } from "@/server/lobby/phases/adjust-phase";
+import { GeneralClientToServer } from "@/server/lobby/phases/general";
+import { PhaseLobbies } from "@/server/lobby/phases/lobbies";
+import {
+  findUser,
+  sendUpdatedLobbies,
+  updateUserData,
+} from "@/server/lobby/utility";
 import { SocketServerSide } from "@/server/types";
 import {
-  EnterUsername,
-  PhaseIdEnterUsername,
-} from "@/shared/types/socket-communication/lobby/enter-username";
+  LeaveGame,
+  MovePiece,
+  OriginTargetPayload,
+  PhaseIdCheckers,
+  ReadyToPlay,
+} from "@/shared/types/socket-communication/games/checkers/game";
+import { Disconnect } from "@/shared/types/socket-communication/lobby/general";
 import { Phase } from "@/shared/types/socket-communication/types";
 
-const enterUsername = (
-  socket: SocketServerSide,
-  { username }: { username: string }
-) => {
+const readyToPlay = (socket: SocketServerSide) => {
   const asyncExecution = async () => {
-    let user = await prisma.user.findFirst({
-      where: {
-        username: { equals: username },
-      },
-    });
-
-    if (user) {
-      socket.emit("GenericResponseError", {
-        error: "Username already exists.",
-      });
+    const user = await findUser(socket);
+    if (!user || !user.joinedLobbyId) {
+      socket.emit("GenericResponseError", { error: "Can't search for game." });
       return;
     }
-
-    user = await prisma.user.create({
-      data: {
-        username,
-        connected: true,
-      },
-    });
-    socket.data.sessionId = user.id;
-    socket.emit("EnterUsernameResponseSuccess", {
-      sessionId: user.id,
-      username,
-    });
-    updateUserData(socket);
+    const game = checkersRepository.findOne(user.joinedLobbyId);
+    if (!game) {
+      socket.emit("GenericResponseError", { error: "Game not found." });
+      return;
+    }
+    game.setPlayerReady(user.id);
   };
   asyncExecution();
 };
 
-export const PhaseEnterUsername: Phase = {
-  id: PhaseIdEnterUsername,
+const movePiece = (socket: SocketServerSide, payload: OriginTargetPayload) => {
+  const asyncExecution = async () => {
+    const user = await findUser(socket);
+    if (!user || !user.joinedLobbyId) {
+      socket.emit("GenericResponseError", { error: "Can't search for game." });
+      return;
+    }
+    const game = checkersRepository.findOne(user.joinedLobbyId);
+    if (!game) {
+      socket.emit("GenericResponseError", { error: "Game not found." });
+      return;
+    }
+    game.movePiece(payload);
+  };
+  asyncExecution();
+};
+
+const leaveGame = (socket: SocketServerSide) => {
+  const asyncExecution = async () => {
+    const user = await findUser(socket);
+    if (!user || !user.joinedLobbyId) {
+      socket.emit("GenericResponseError", { error: "Can't find user." });
+      return;
+    }
+    await prisma.user.update({
+      where: { id: user.id },
+      data: { joinedLobbyId: null },
+    });
+    setPhase(socket, PhaseLobbies);
+    updateUserData(socket);
+    sendUpdatedLobbies();
+  };
+  asyncExecution();
+};
+
+const disconnect = (socket: SocketServerSide) => {
+  GeneralClientToServer.disconnect(socket);
+};
+
+export const PhaseCheckers: Phase = {
+  id: PhaseIdCheckers,
   functions: {
-    [EnterUsername]: enterUsername,
+    [ReadyToPlay]: readyToPlay,
+    [MovePiece]: movePiece,
+    [LeaveGame]: leaveGame,
+    [Disconnect]: disconnect,
   },
 };

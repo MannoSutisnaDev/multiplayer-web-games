@@ -3,7 +3,7 @@
 import { usePathname, useRouter } from "next/navigation";
 import { PropsWithChildren, useContext, useEffect } from "react";
 
-import { SocketContextWrapper } from "@/app/internals/socket/SocketContext";
+import { SocketContextWrapper } from "@/client/internals/socket/SocketContext";
 
 export default function RouteGuard({ children }: PropsWithChildren) {
   const pathname = usePathname();

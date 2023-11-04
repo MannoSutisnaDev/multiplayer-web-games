@@ -1,15 +1,18 @@
-import { motion, useAnimate, usePresence } from 'framer-motion';
-import { useEffect } from 'react';
-import { createPortal } from 'react-dom';
+import { motion, useAnimate, usePresence } from "framer-motion";
+import { useEffect } from "react";
+import { createPortal } from "react-dom";
 
-import { Message } from '@/app/internals/toast-messages/types';
+import { Message } from "@/client/internals/toast-messages/types";
 
 interface Props {
   message: Message | null;
   removeMessage: () => Promise<void>;
 }
 
-export default function ToastMessageComponent({ message, removeMessage }: Props) {
+export default function ToastMessageComponent({
+  message,
+  removeMessage,
+}: Props) {
   const [isPresent, safeToRemove] = usePresence();
   const [scope, animate] = useAnimate();
 
@@ -26,8 +29,8 @@ export default function ToastMessageComponent({ message, removeMessage }: Props)
           },
           {
             duration: 0.5,
-            ease: 'easeIn',
-          },
+            ease: "easeIn",
+          }
         );
       };
       enterAnimation();
@@ -40,8 +43,8 @@ export default function ToastMessageComponent({ message, removeMessage }: Props)
           },
           {
             duration: 0.5,
-            ease: 'easeOut',
-          },
+            ease: "easeOut",
+          }
         );
         safeToRemove();
       };
@@ -51,7 +54,7 @@ export default function ToastMessageComponent({ message, removeMessage }: Props)
 
   useEffect(() => {
     let timeout: NodeJS.Timeout | null = null;
-    if (message?.type === 'error') {
+    if (message?.type === "error") {
       timeout = setTimeout(() => {
         removeMessage();
       }, 2000);
@@ -72,7 +75,9 @@ export default function ToastMessageComponent({ message, removeMessage }: Props)
         <motion.div
           ref={scope}
           initial={{ y: -200 }}
-          className={`message ${message.type === 'error' ? 'error' : 'success'}`}
+          className={`message ${
+            message.type === "error" ? "error" : "success"
+          }`}
         >
           <div className="message-inner">
             <div className="wrapper">
@@ -86,7 +91,7 @@ export default function ToastMessageComponent({ message, removeMessage }: Props)
             </div>
           </div>
         </motion.div>,
-        document.body,
+        document.body
       )}
     </>
   );

@@ -1,4 +1,5 @@
 import prisma from "@/server/db";
+import { GeneralClientToServer } from "@/server/lobby/phases/general";
 import {
   sendUpdatedLobbies,
   sendUpdatedLobbiesToPlayer,
@@ -145,5 +146,6 @@ export const PhaseLobbies: Phase = {
     [CreateLobby]: createLobby,
     [JoinLobby]: joinLobby,
     [RequestUpdateLobbies]: requestUpdateLobbies,
+    ...GeneralClientToServer,
   },
 };

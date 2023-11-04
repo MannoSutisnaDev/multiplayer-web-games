@@ -1,5 +1,6 @@
 import { GameTypes } from "@/shared/types/socket-communication/general";
 export const UpdateUserData = "UpdateUserData";
+export const Disconnect = "disconnect";
 
 export interface GeneralSocketFunctions {
   ServerToClient: {
@@ -14,5 +15,8 @@ export interface GeneralSocketFunctions {
       lobbyId?: string;
       gameType: GameTypes | null;
     }) => void;
+  };
+  ClientToServer: {
+    [Disconnect]: () => void;
   };
 }

@@ -1,7 +1,6 @@
 import BasePlayerModel from "@/server/games/repository/BasePlayerModel";
 import { getSocketsByUserIds } from "@/server/lobby/utility";
 import { SocketServerSide } from "@/server/types";
-import { GameTypes } from "@/shared/types/socket-communication/general";
 
 export default abstract class BaseGameModel<
   T extends BasePlayerModel = BasePlayerModel,
@@ -18,7 +17,9 @@ export default abstract class BaseGameModel<
 
   abstract initializePlayers(playerIds: string[]): void;
 
-  abstract initializeGame(): void;
+  abstract initializeGameImplementation(): void;
+
+  abstract startGame(): void;
 
   abstract sendGameStatePayload(socket: SocketServerSide): void;
 
@@ -26,17 +27,19 @@ export default abstract class BaseGameModel<
     return this.id;
   }
 
-  setPlayerReady(playerId: string) {
+  setPlayerReady(playerId: string): boolean {
     const player = this.players.find((player) => player.id === playerId);
     if (!player) {
-      return;
+      return false;
     }
     player.ready = true;
     const readyPlayers = this.players.filter((player) => player.ready);
-    if (readyPlayers.length < this.players.length) {
-      return;
+    if (readyPlayers.length === this.players.length) {
+      this.startGame();
     }
+    return true;
   }
+
   getGameStarted(): boolean {
     return this.gameStarted;
   }
@@ -49,8 +52,12 @@ export default abstract class BaseGameModel<
     }
   }
 
-  startGame() {
-    this.initializeGame();
+  leaveGame(playerId: string) {
+    //TODO
+  }
+
+  intializeGame() {
+    this.initializeGameImplementation();
     this.gameStarted = true;
     this.sendGameState();
   }

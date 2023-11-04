@@ -1,5 +1,6 @@
 import prisma from "@/server/db";
 import { createCheckersGame } from "@/server/games/checkers/CheckersRepository";
+import { GeneralClientToServer } from "@/server/lobby/phases/general";
 import {
   findUser,
   findUserWithLobbyItOwns,
@@ -328,5 +329,6 @@ export const PhaseLobby: Phase = {
     [SetNewOwner]: setNewOwner,
     [LeaveLobby]: leaveLobby,
     [RequestUpdateLobby]: requestUpdateLobby,
+    ...GeneralClientToServer,
   },
 };

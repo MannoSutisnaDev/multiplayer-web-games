@@ -7,7 +7,7 @@ import { PropsWithChildren, useEffect, useState } from "react";
 import {
   establishSocketConnection,
   socket,
-} from "@/app/internals/socket/socket";
+} from "@/client/internals/socket/socket";
 import { GameTypes } from "@/shared/types/socket-communication/general";
 
 interface SocketContextWrapperInterface {

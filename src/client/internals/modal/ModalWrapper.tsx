@@ -3,8 +3,8 @@
 import { AnimatePresence } from "framer-motion";
 import { createPortal } from "react-dom";
 
-import ModalInner from "@/app/internals/modal/ModalInner";
-import { BaseModalProps } from "@/app/types";
+import ModalInner from "@/client/internals/modal/ModalInner";
+import { BaseModalProps } from "@/client/types";
 
 export default function ModalWrapper<P extends BaseModalProps>(
   WrappedComponent: React.ComponentType<P>

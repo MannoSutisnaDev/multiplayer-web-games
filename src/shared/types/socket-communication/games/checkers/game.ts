@@ -4,11 +4,14 @@ import {
 } from "@/shared/types/socket-communication/general";
 
 export const MovePiece = "MovePiece";
+export const ReadyToPlay = "ReadyToPlay";
+export const LeaveGame = "LeaveGame";
+
 export const GameStateUpdateResponse = "GameStateUpdateResponse";
 
 export const PhaseIdCheckers = "checkers";
 
-interface OriginTargetPayload {
+export interface OriginTargetPayload {
   origin: {
     row: number;
     column: number;
@@ -19,9 +22,11 @@ interface OriginTargetPayload {
   };
 }
 
-export interface PhaseEnterUsernameTypes {
+export interface PhaseCheckersTypes {
   ClientToServer: {
-    [MovePiece]: ({ origin, target }: OriginTargetPayload) => void;
+    [MovePiece]: (payload: OriginTargetPayload) => void;
+    [ReadyToPlay]: () => void;
+    [LeaveGame]: () => void;
   };
   ServerToClient: {
     [GameStateUpdateResponse]: ({ data }: any) => void;

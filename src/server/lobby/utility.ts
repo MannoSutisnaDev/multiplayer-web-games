@@ -1,6 +1,7 @@
 import { User } from "@prisma/client";
 
 import prisma from "@/server/db";
+import { PhaseCheckers } from "@/server/games/checkers/phases/game";
 import { io } from "@/server/init";
 import { setPhase } from "@/server/lobby/phases/adjust-phase";
 import { PhaseEnterUsername } from "@/server/lobby/phases/enter-username";
@@ -79,8 +80,14 @@ export const updateUserData = async (socket: SocketServerSide) => {
   socket.data.sessionId = sessionId;
   if (!lobby) {
     setPhase(socket, PhaseLobbies);
-  } else {
+  } else if (!lobby.gameStarted) {
     setPhase(socket, PhaseLobby);
+  } else {
+    switch (lobby.GameType.name as GameTypes) {
+      case GameTypes.Checkers:
+        setPhase(socket, PhaseCheckers);
+        break;
+    }
   }
   const gameType: GameTypes | null = (lobby?.GameType?.id as GameTypes) ?? null;
   socket.emit("UpdateUserData", {

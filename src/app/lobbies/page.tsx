@@ -3,10 +3,10 @@
 import { useRouter } from "next/navigation";
 import { useContext, useEffect, useState } from "react";
 
-import CreateLobbyModal from "@/app/internals/modal/implementation/CreateLobbyModal";
-import { socket } from "@/app/internals/socket/socket";
-import { SocketContextWrapper } from "@/app/internals/socket/SocketContext";
-import { ToastMessageContextWrapper } from "@/app/internals/toast-messages/ToastMessageContext";
+import CreateLobbyModal from "@/client/internals/modal/implementation/CreateLobbyModal";
+import { socket } from "@/client/internals/socket/socket";
+import { SocketContextWrapper } from "@/client/internals/socket/SocketContext";
+import { ToastMessageContextWrapper } from "@/client/internals/toast-messages/ToastMessageContext";
 import { LobbyWithGameTypeAndUsers } from "@/shared/types/socket-communication/types";
 
 export default function Lobbies() {

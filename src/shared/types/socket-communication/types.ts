@@ -1,6 +1,10 @@
 import { Prisma } from "@prisma/client";
 
 import {
+  PhaseCheckersTypes,
+  PhaseIdCheckers,
+} from "@/shared/types/socket-communication/games/checkers/game";
+import {
   PhaseEnterUsernameTypes,
   PhaseIdEnterUsername,
 } from "@/shared/types/socket-communication/lobby/enter-username";
@@ -17,15 +21,18 @@ import {
 export type ServerToClientEvents = GeneralSocketFunctions["ServerToClient"] &
   PhaseEnterUsernameTypes["ServerToClient"] &
   PhaseLobbiesTypes["ServerToClient"] &
-  PhaseLobbyTypes["ServerToClient"];
+  PhaseLobbyTypes["ServerToClient"] &
+  PhaseCheckersTypes["ServerToClient"];
 export type ClientToServerEvents = PhaseEnterUsernameTypes["ClientToServer"] &
   PhaseLobbiesTypes["ClientToServer"] &
-  PhaseLobbyTypes["ClientToServer"];
+  PhaseLobbyTypes["ClientToServer"] &
+  PhaseCheckersTypes["ClientToServer"];
 
-type PhaseIds =
+export type PhaseIds =
   | typeof PhaseIdEnterUsername
   | typeof PhaseIdLobbies
-  | typeof PhaseIdLobby;
+  | typeof PhaseIdLobby
+  | typeof PhaseIdCheckers;
 
 export interface Phase {
   id: PhaseIds;

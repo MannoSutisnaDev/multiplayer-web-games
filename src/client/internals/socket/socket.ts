@@ -2,7 +2,7 @@
 
 import { io } from "socket.io-client";
 
-import { SocketClientSide } from "@/app/types";
+import { SocketClientSide } from "@/client/types";
 
 const socket = io({ autoConnect: false }) as SocketClientSide;
 

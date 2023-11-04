@@ -1,6 +1,6 @@
-import { Dispatch, SetStateAction, useState } from "react";
+import { useState } from "react";
 
-import useOutsideClick from "@/app/hooks/useOutsideClick";
+import useOutsideClick from "@/client/hooks/useOutsideClick";
 
 interface Props {
   options: {

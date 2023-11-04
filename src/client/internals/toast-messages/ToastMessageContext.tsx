@@ -12,7 +12,7 @@ import {
 import {
   Message,
   MessageContextInterface,
-} from "@/app/internals/toast-messages/types";
+} from "@/client/internals/toast-messages/types";
 
 import MessageComponent from "./ToastMessageComponent";
 

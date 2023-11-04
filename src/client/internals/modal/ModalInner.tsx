@@ -4,7 +4,7 @@ import { motion, useAnimate, usePresence } from "framer-motion";
 import { useEffect, useRef } from "react";
 import { PropsWithChildren } from "react";
 
-import { BaseModalProps } from "@/app/types";
+import { BaseModalProps } from "@/client/types";
 
 export default function ModalInner({
   children,

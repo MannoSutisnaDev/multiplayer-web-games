@@ -2,11 +2,11 @@
 
 import { useContext, useEffect, useState } from "react";
 
-import ThreeDotsMenu from "@/app/components/ThreeDotsMenu";
-import EditLobbyModal from "@/app/internals/modal/implementation/EditLobbyModal";
-import { socket } from "@/app/internals/socket/socket";
-import { SocketContextWrapper } from "@/app/internals/socket/SocketContext";
-import { ToastMessageContextWrapper } from "@/app/internals/toast-messages/ToastMessageContext";
+import ThreeDotsMenu from "@/client/components/ThreeDotsMenu";
+import EditLobbyModal from "@/client/internals/modal/implementation/EditLobbyModal";
+import { socket } from "@/client/internals/socket/socket";
+import { SocketContextWrapper } from "@/client/internals/socket/SocketContext";
+import { ToastMessageContextWrapper } from "@/client/internals/toast-messages/ToastMessageContext";
 import { LobbyWithGameTypeAndUsers } from "@/shared/types/socket-communication/types";
 
 export default function Lobby() {
