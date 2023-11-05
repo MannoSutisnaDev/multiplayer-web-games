@@ -270,6 +270,24 @@ export default abstract class BaseGameModel<
   }
 
   leaveGame(playerId: string) {
-    //TODO
+    const player = this.players.find((player) => player.id === playerId);
+    if (!player) {
+      return;
+    }
+    player.connected = false;
+    this.scheduleDelete(
+      `Players have left the game`,
+      (playersDisconnected: string[], secondsLeft: number) => {
+        const playerNames = playersDisconnected.join(", ");
+        const playersDisconnectedMessage =
+          playersDisconnected.length > 1
+            ? `The following players have left the game: (${playerNames})`
+            : `The following player has left the game: (${playerNames})`;
+        return `${playersDisconnectedMessage}
+        
+        This game will be deleted in ${secondsLeft}`;
+      },
+      10
+    );
   }
 }

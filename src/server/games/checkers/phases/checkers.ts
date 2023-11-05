@@ -1,15 +1,8 @@
 import { type User } from "@prisma/client";
 
-import prisma from "@/server/db";
 import CheckersGame from "@/server/games/checkers/CheckersGame";
 import { repository } from "@/server/games/checkers/CheckersRepository";
-import { setPhase } from "@/server/lobby/phases/adjust-phase";
-import { PhaseLobbies } from "@/server/lobby/phases/lobbies";
-import {
-  findUser,
-  sendUpdatedLobbies,
-  updateUserData,
-} from "@/server/lobby/utility";
+import { findUser, leaveLobby } from "@/server/lobby/utility";
 import { SocketServerSide } from "@/server/types";
 import {
   LeaveGame,
@@ -69,21 +62,7 @@ const movePiece = (socket: SocketServerSide, payload: OriginTargetPayload) => {
 };
 
 const leaveGame = (socket: SocketServerSide) => {
-  const asyncExecution = async () => {
-    const result = await findUserAndGame(socket);
-    if (!result) {
-      return;
-    }
-    const { user } = result;
-    await prisma.user.update({
-      where: { id: user.id },
-      data: { joinedLobbyId: null },
-    });
-    setPhase(socket, PhaseLobbies);
-    updateUserData(socket);
-    sendUpdatedLobbies();
-  };
-  asyncExecution();
+  leaveLobby(socket);
 };
 
 const requestGameStateUpdate = (socket: SocketServerSide) => {

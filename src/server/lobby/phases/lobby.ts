@@ -9,6 +9,7 @@ import {
   findUserWithLobbyItOwns,
   getSocketByUserId,
   getSocketsByUserIds,
+  leaveLobby as leaveLobbyFunction,
   sendUpdatedLobbies,
   sendUpdatedLobby,
   sendUpdateLobbyToPlayer,
@@ -301,45 +302,7 @@ const setNewOwner = (
 };
 
 const leaveLobby = (socket: SocketServerSide) => {
-  const asyncExecution = async () => {
-    const user = await findUser(socket);
-    if (!user) {
-      return;
-    }
-    const lobbyId = user.joinedLobbyId;
-    if (!lobbyId) {
-      return;
-    }
-    await prisma.user.update({
-      where: { id: user.id },
-      data: { joinedLobbyId: null, ready: false },
-    });
-    const lobby = await prisma.lobby.findFirst({
-      where: { id: lobbyId },
-      include: {
-        Users: {
-          where: { connected: true },
-        },
-      },
-    });
-    if (!lobby) {
-      return;
-    }
-    if (lobby.Users.length === 0) {
-      deleteLobby(lobby.id);
-    } else if (lobby?.lobbyOwnerId === user.id) {
-      const player = lobby.Users[0];
-      const ownerId = player ? player.id : null;
-      await prisma.lobby.update({
-        where: { id: lobbyId },
-        data: { lobbyOwnerId: ownerId },
-      });
-    }
-    sendUpdatedLobbies();
-    sendUpdatedLobby(lobbyId);
-    updateUserData(socket);
-  };
-  asyncExecution();
+  leaveLobbyFunction(socket);
 };
 
 const requestUpdateLobby = (socket: SocketServerSide) => {

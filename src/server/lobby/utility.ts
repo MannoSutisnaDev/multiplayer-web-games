@@ -315,3 +315,54 @@ export const deleteLobby = async (lobbyId: string) => {
   }
   sendUpdatedLobbies();
 };
+
+export const leaveLobby = async (socket: SocketServerSide) => {
+  const user = await findUser(socket);
+  if (!user) {
+    return;
+  }
+  const lobbyId = user.joinedLobbyId;
+  if (!lobbyId) {
+    return;
+  }
+  await prisma.user.update({
+    where: { id: user.id },
+    data: { joinedLobbyId: null, ready: false },
+  });
+  const lobby = await prisma.lobby.findFirst({
+    where: { id: lobbyId },
+    include: {
+      Users: {
+        where: { connected: true },
+      },
+    },
+  });
+  if (!lobby) {
+    return;
+  }
+  await prisma.user.update({
+    where: { id: user.id },
+    data: { ready: false, joinedLobbyId: null },
+  });
+  setPhase(socket, PhaseLobbies);
+  updateUserData(socket);
+  sendUpdatedLobbies();
+  const game = checkersRepository.findOne(lobby.id);
+  if (game) {
+    game.leaveGame(user.id);
+  }
+  if (lobby.Users.length === 0) {
+    await deleteLobby(lobby.id);
+    return;
+  } else if (lobby?.lobbyOwnerId === user.id) {
+    const player = lobby.Users[0];
+    const ownerId = player ? player.id : null;
+    await prisma.lobby.update({
+      where: { id: lobbyId },
+      data: { lobbyOwnerId: ownerId },
+    });
+    sendUpdatedLobbies();
+    sendUpdatedLobby(lobbyId);
+    updateUserData(socket);
+  }
+};

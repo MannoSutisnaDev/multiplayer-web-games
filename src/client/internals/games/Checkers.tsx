@@ -46,6 +46,22 @@ export default function Checkers() {
       <div>
         <h1>Checkers</h1>
         <div>{gameData !== null ? "Done loading" : "Loading..."}</div>
+        <div>
+          <button
+            onClick={() => {
+              if (
+                !confirm(
+                  "Are you sure want to leave this game? The game will be deleted."
+                )
+              ) {
+                return;
+              }
+              socket.emit("LeaveGame");
+            }}
+          >
+            Leave game
+          </button>
+        </div>
       </div>
     </>
   );
