@@ -1,5 +1,5 @@
 import prisma from "@/server/db";
-import { createCheckersGame } from "@/server/games/checkers/CheckersRepository";
+import { createGame as createCheckersGame } from "@/server/games/checkers/CheckersRepository";
 import { GeneralClientToServer } from "@/server/lobby/phases/general";
 import {
   findUser,
@@ -140,10 +140,15 @@ const startGame = (socket: SocketServerSide) => {
       socket.emit("GenericResponseError", e);
       return;
     }
-    await prisma.lobby.update({
-      where: { id: lobby.id },
-      data: { gameStarted: true },
-    });
+    try {
+      await prisma.lobby.update({
+        where: { id: lobby.id },
+        data: { gameStarted: true },
+      });
+    } catch (e) {
+      // console.error(e);
+      throw e;
+    }
     const playerIds = lobby.Users.map((user) => user.id);
     const sockets = getSocketsByUserIds(playerIds);
     for (const socket of sockets) {
@@ -305,6 +310,9 @@ const leaveLobby = (socket: SocketServerSide) => {
       },
     });
     if ((lobby?.Users?.length ?? 0) === 0) {
+      await prisma.gameState.delete({
+        where: { lobbyId },
+      });
       await prisma.lobby.delete({
         where: { id: lobbyId },
       });

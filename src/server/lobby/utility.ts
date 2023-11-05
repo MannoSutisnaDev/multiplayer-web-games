@@ -1,7 +1,7 @@
 import { User } from "@prisma/client";
 
 import prisma from "@/server/db";
-import { PhaseCheckers } from "@/server/games/checkers/phases/game";
+import { PhaseCheckers } from "@/server/games/checkers/phases/checkers";
 import { io } from "@/server/init";
 import { setPhase } from "@/server/lobby/phases/adjust-phase";
 import { PhaseEnterUsername } from "@/server/lobby/phases/enter-username";
@@ -56,7 +56,9 @@ export const findLobby: (
   return lobby;
 };
 
-export const updateUserData = async (socket: SocketServerSide) => {
+export const updateUserData = async (
+  socket: SocketServerSide
+): Promise<User | null> => {
   const sessionId = socket?.data?.sessionId;
   const user = await findUser(socket);
   if (!sessionId || !user) {
@@ -67,7 +69,7 @@ export const updateUserData = async (socket: SocketServerSide) => {
       lobbyId: "",
       gameType: null,
     });
-    return;
+    return null;
   }
   let lobby: LobbyWithGameType | null = null;
   if (user.joinedLobbyId) {
@@ -93,6 +95,7 @@ export const updateUserData = async (socket: SocketServerSide) => {
     lobbyId: lobby?.id,
     gameType: lobby?.gameStarted ? gameType : null,
   });
+  return user;
 };
 
 export const sendUpdatedLobbies = async () => {

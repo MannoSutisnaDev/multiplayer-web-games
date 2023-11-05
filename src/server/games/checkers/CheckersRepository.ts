@@ -1,15 +1,37 @@
+import prisma from "@/server/db";
+import BaseGameRepository from "@/server/games/base/BaseGameRepository";
 import CheckersGame from "@/server/games/checkers/CheckersGame";
-import BaseGameRepository from "@/server/games/repository/BaseGameRepository";
+import { GameTypes } from "@/shared/types/socket-communication/general";
+
 export default class CheckersRepository extends BaseGameRepository<CheckersGame> {}
 
-const checkersRepository = new CheckersRepository();
+export const repository = new CheckersRepository();
 
-const createCheckersGame = (id: string, playerIds: string[]) => {
-  if (!!checkersRepository.findOne(id)) {
+export const createGame = (id: string, playerIds: string[]): CheckersGame => {
+  if (repository.findOne(id)) {
     throw new Error("Game with lobby ID already exists.");
   }
-  checkersRepository.save(new CheckersGame(id, playerIds));
-  const game = checkersRepository.findOne(id);
+  const game = new CheckersGame(id, playerIds);
+  repository.save(game);
+  return game;
 };
 
-export { checkersRepository, createCheckersGame };
+export const rebuildGames = async () => {
+  const lobbies = await prisma.lobby.findMany({
+    where: {
+      gameStarted: true,
+      GameType: {
+        name: GameTypes.Checkers,
+      },
+    },
+  });
+  for (const lobby of lobbies) {
+    const game = createGame(lobby.id, []);
+    try {
+      game.rebuild();
+    } catch (e) {
+      repository.delete(game);
+    }
+    repository.save(game);
+  }
+};

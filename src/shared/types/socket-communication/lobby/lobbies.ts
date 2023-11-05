@@ -1,4 +1,4 @@
-import { GenericErrorResponseFunction, GenericResponseError } from "../general";
+import { GameTypes,GenericErrorResponseFunction, GenericResponseError  } from "../general";
 
 export const JoinLobby = "JoinLobby";
 export const JoinLobbyResponseSuccess = "JoinLobbyResponseSuccess";
@@ -13,7 +13,7 @@ export const UpdateLobbiesResponse = "UpdateLobbiesResponse";
 export const PhaseIdLobbies = "lobbies";
 import { LobbyWithGameTypeAndUsers } from "@/shared/types/socket-communication/types";
 
-import { GameTypes } from "../general";
+
 
 export interface PhaseLobbiesTypes {
   ClientToServer: {

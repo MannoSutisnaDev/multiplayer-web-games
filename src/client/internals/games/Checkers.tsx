@@ -7,8 +7,10 @@ export default function Checkers() {
   const { addErrorMessage } = useContext(ToastMessageContextWrapper);
   const [gameData, setGameData] = useState<{
     initialized: boolean;
+    variable: string;
   } | null>(null);
-  const readyToPlaySignaled = useRef<boolean>(false);
+  const [textField, setTextField] = useState(gameData?.variable ?? "");
+  const signaledReady = useRef<boolean>(false);
 
   useEffect(() => {
     socket.on("GenericResponseError", ({ error }: { error: string }) => {
@@ -16,11 +18,13 @@ export default function Checkers() {
     });
     socket.on("CheckersGameStateUpdateResponse", (gameData) => {
       setGameData(gameData);
+      setTextField(gameData.variable);
     });
 
-    if (!readyToPlaySignaled.current) {
+    if (!signaledReady.current) {
+      signaledReady.current = true;
       socket.emit("ReadyToPlay");
-      readyToPlaySignaled.current = true;
+      socket.emit("RequestGameStateUpdate");
     }
 
     return () => {
@@ -31,7 +35,21 @@ export default function Checkers() {
   return (
     <div>
       <h1>Checkers</h1>
-      {gameData !== null ? "Done loading" : "Loading..."}
+      <div>{gameData !== null ? "Done loading" : "Loading..."}</div>
+      <div>
+        <input
+          type="text"
+          value={textField}
+          onChange={(e) => setTextField(e.target.value)}
+        />
+        <button
+          onClick={() => {
+            socket.emit("Test", textField);
+          }}
+        >
+          Change state
+        </button>
+      </div>
     </div>
   );
 }

@@ -21,14 +21,15 @@ model User {
 }
 
 model Lobby {
-  id           String   @id @default(cuid())
-  name         String   @unique
+  id           String     @id @default(cuid())
+  name         String     @unique
   gameTypeId   String
   gameStarted  Boolean
-  lobbyOwnerId String?  @unique
-  LobbyOwner   User?    @relation(fields: [lobbyOwnerId], references: [id], name: "lobby_owner")
-  GameType     GameType @relation(fields: [gameTypeId], references: [id])
-  Users        User[]   @relation("lobby_player")
+  lobbyOwnerId String?    @unique
+  LobbyOwner   User?      @relation(fields: [lobbyOwnerId], references: [id], name: "lobby_owner")
+  GameType     GameType   @relation(fields: [gameTypeId], references: [id])
+  Users        User[]     @relation("lobby_player")
+  GameState    GameState? @relation("lobby_link")
 }
 
 model GameType {
@@ -36,4 +37,10 @@ model GameType {
   name       String  @unique
   maxPlayers Int
   Lobby      Lobby[]
+}
+
+model GameState {
+  lobbyId String @id @default(cuid())
+  Lobby   Lobby  @relation(fields: [lobbyId], references: [id], name: "lobby_link")
+  state   Bytes
 }

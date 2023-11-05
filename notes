@@ -99,16 +99,10 @@ https://www.youtube.com/watch?v=KGXCiRf3E_I
 - user owner maken
 - als een speler disconnect of connect de lobbies en lobby updaten
 - spel starten en naar de volgende pagina gaan
-- spel verlaten wanneer het is gestart
-- een modal tonen dat het spel in 10 seconden verwijderd gaat worden
-- join button alleen klikbaar maken als het spel niet al bezig is en er niet al het max aantal spelers in zit
-- leave logic uitbreiden
-- wanneer een speler is gedisconnect, de kans geven om terug te komen, anders het spel sluiten
 
 - als je een lobby aanmaakt en wordt verplaatst naar de lobby dan zie je de lijst van spelers niet verschijnen (gefixt)
 
 - checkers implementeren in de code base
-- chess implementeren in de code base
 - deployen
 
 Todo 2023-11-04:
@@ -120,3 +114,26 @@ Todo 2023-11-04:
 - Als één speler leaved een modal tonen dat in X aantal seconden het spel zal worden geëindigd.
   Als de speler weer terugkomt dan het eindigen cancellen.
 - Als het spel klaar is een modal tonen dat de spelers in X aantal seconden terug worden gestuurd naar de lobby
+
+Todo 2023-11-05:
+
+- state bijhouden voor het spel en opnieuw inladen zodra de server opnieuw wordt gestart
+- spel verlaten wanneer het is gestart
+- Als één speler leaved een modal tonen dat in X aantal seconden het spel zal worden geëindigd.
+  Als de speler weer terugkomt dan het eindigen cancellen.
+- Als het spel klaar is een modal tonen dat de spelers in X aantal seconden terug worden gestuurd naar de lobby
+- join button alleen klikbaar maken als het spel niet al bezig is en er niet al het max aantal spelers in zit
+- leave logic uitbreiden
+- wanneer een speler is gedisconnect, de kans geven om terug te komen, anders het spel sluiten
+- checkers implementeren in de code base
+- deployen
+
+Do validation based on typescript interface:
+https://stackoverflow.com/questions/33800497/check-if-an-object-implements-an-interface-at-runtime-with-typescript
+
+Store big strings with Prisma (PostgreSql, mySql, sqLite):
+https://blog.joewoods.dev/programming/storing-really-big-strings-with-prisma/
+
+- iedreen een lobby verlaten betekend de lobby verwijderen plus bij alle players aangeven dat ze niet meer in die lobby zitten
+
+- bij het inloggen checken of er al een player is ingelogd met het session ID, zo ja dan naar het enter username scherm sturen

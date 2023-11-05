@@ -1,8 +1,7 @@
 "use client";
 
 import { motion, useAnimate, usePresence } from "framer-motion";
-import { useEffect, useRef } from "react";
-import { PropsWithChildren } from "react";
+import { PropsWithChildren,useEffect, useRef  } from "react";
 
 import { BaseModalProps } from "@/client/types";
 

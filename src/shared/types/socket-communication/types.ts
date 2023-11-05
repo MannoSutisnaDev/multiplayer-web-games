@@ -3,7 +3,7 @@ import { Prisma } from "@prisma/client";
 import {
   PhaseCheckersTypes,
   PhaseIdCheckers,
-} from "@/shared/types/socket-communication/games/checkers/game";
+} from "@/shared/types/socket-communication/games/checkers";
 import {
   PhaseEnterUsernameTypes,
   PhaseIdEnterUsername,
