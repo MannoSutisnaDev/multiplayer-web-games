@@ -1,13 +1,14 @@
 "use client";
 
 import { motion, useAnimate, usePresence } from "framer-motion";
-import { PropsWithChildren,useEffect, useRef  } from "react";
+import { PropsWithChildren, useEffect, useRef } from "react";
 
 import { BaseModalProps } from "@/client/types";
 
 export default function ModalInner({
   children,
   close,
+  modalInnerExtraClass,
 }: PropsWithChildren<BaseModalProps>) {
   const [isPresent, safeToRemove] = usePresence();
   const [scope, animate] = useAnimate();
@@ -60,9 +61,9 @@ export default function ModalInner({
       ref={scope}
       className="modal-backdrop"
       initial={{ opacity: 0 }}
-      onClick={() => close()}
+      onClick={() => close?.()}
     >
-      <div className="modal-inner">
+      <div className={`modal-inner ${modalInnerExtraClass ?? ""}`}>
         <motion.div
           ref={contentRef}
           initial={{ y: 1000 }}

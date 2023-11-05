@@ -61,3 +61,23 @@
     padding: 10px;
   }
 }
+
+.modal-backdrop {
+  .modal-inner.game-to-be-deleted-wrapper {
+    align-items: flex-start;
+  }
+}
+
+.game-to-be-deleted {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  .message-content {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    white-space: pre-line;
+  }
+}

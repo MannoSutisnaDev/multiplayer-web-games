@@ -1,14 +1,17 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useContext, useEffect,useState  } from "react";
+import { useContext, useEffect, useState } from "react";
 
 import ModalWrapper from "@/client/internals/modal/ModalWrapper";
 import { socket } from "@/client/internals/socket/socket";
 import { SocketContextWrapper } from "@/client/internals/socket/SocketContext";
 import { ToastMessageContextWrapper } from "@/client/internals/toast-messages/ToastMessageContext";
 import { BaseModalProps } from "@/client/types";
-import { GameTypes,GameTypesData  } from "@/shared/types/socket-communication/general";
+import {
+  GameTypes,
+  GameTypesData,
+} from "@/shared/types/socket-communication/general";
 import { entries } from "@/shared/utility";
 
 function CreateLobbyModalPre({ close }: BaseModalProps) {
@@ -45,7 +48,7 @@ function CreateLobbyModalPre({ close }: BaseModalProps) {
         className="close"
         onClick={(e) => {
           e.stopPropagation();
-          close();
+          close?.();
         }}
       >
         &times;

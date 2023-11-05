@@ -1,7 +1,10 @@
+import { PrismaClientUnknownRequestError } from "@prisma/client/runtime/library";
+
 import prisma from "@/server/db";
+import BaseGameModel from "@/server/games/base/BaseGameModel";
 import { createGame as createCheckersGame } from "@/server/games/checkers/CheckersRepository";
-import { GeneralClientToServer } from "@/server/lobby/phases/general";
 import {
+  deleteLobby,
   findUser,
   findUserWithLobbyItOwns,
   getSocketByUserId,
@@ -126,29 +129,39 @@ const startGame = (socket: SocketServerSide) => {
       return;
     }
     try {
-      switch (lobby.GameType.name as GameTypes) {
-        case GameTypes.Checkers:
-          createCheckersGame(
-            lobby.id,
-            lobby.Users.map((user) => user.id)
-          );
-          break;
-        default:
-          break;
-      }
-    } catch (e: any) {
-      socket.emit("GenericResponseError", e);
-      return;
-    }
-    try {
       await prisma.lobby.update({
         where: { id: lobby.id },
         data: { gameStarted: true },
       });
     } catch (e) {
-      // console.error(e);
-      throw e;
+      console.error(e);
+      socket.emit("GenericResponseError", { error: "Could not start lobby." });
+      return;
     }
+    let game: BaseGameModel | null = null;
+    try {
+      switch (lobby.GameType.name as GameTypes) {
+        case GameTypes.Checkers:
+          game = createCheckersGame(
+            lobby.id,
+            lobby.Users.map((user) => ({
+              id: user.id,
+              name: user.username,
+            }))
+          );
+          break;
+      }
+    } catch (e: any) {
+      if (e instanceof Error) {
+        socket.emit("GenericResponseError", { error: e.message });
+      }
+      await prisma.lobby.update({
+        where: { id: lobby.id },
+        data: { gameStarted: false },
+      });
+      return;
+    }
+    await game?.saveState();
     const playerIds = lobby.Users.map((user) => user.id);
     const sockets = getSocketsByUserIds(playerIds);
     for (const socket of sockets) {
@@ -309,13 +322,11 @@ const leaveLobby = (socket: SocketServerSide) => {
         },
       },
     });
-    if ((lobby?.Users?.length ?? 0) === 0) {
-      await prisma.gameState.delete({
-        where: { lobbyId },
-      });
-      await prisma.lobby.delete({
-        where: { id: lobbyId },
-      });
+    if (!lobby) {
+      return;
+    }
+    if (lobby.Users.length === 0) {
+      deleteLobby(lobby.id);
     } else if (lobby?.lobbyOwnerId === user.id) {
       const player = lobby.Users[0];
       const ownerId = player ? player.id : null;
@@ -345,6 +356,5 @@ export const PhaseLobby: Phase = {
     [SetNewOwner]: setNewOwner,
     [LeaveLobby]: leaveLobby,
     [RequestUpdateLobby]: requestUpdateLobby,
-    ...GeneralClientToServer,
   },
 };

@@ -1,3 +1,4 @@
+import { GameToBeDeleted } from "@/server/games/base/BaseGameModel";
 import {
   GenericErrorResponseFunction,
   GenericResponseError,
@@ -25,6 +26,11 @@ export interface OriginTargetPayload {
   };
 }
 
+export interface GameData {
+  initialized: boolean;
+  variable: string;
+}
+
 export interface PhaseCheckersTypes {
   ClientToServer: {
     [MovePiece]: (payload: OriginTargetPayload) => void;
@@ -35,10 +41,11 @@ export interface PhaseCheckersTypes {
   };
   ServerToClient: {
     [CheckersGameStateUpdateResponse]: ({
-      initialized,
+      gameData,
+      gameToBeDeleted,
     }: {
-      initialized: boolean;
-      variable: string;
+      gameData: GameData;
+      gameToBeDeleted: GameToBeDeleted;
     }) => void;
     [GenericResponseError]: GenericErrorResponseFunction;
   };

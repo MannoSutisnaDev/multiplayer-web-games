@@ -1,32 +1,34 @@
 import BaseGameModel, {
   BaseGameModelInterface,
+  PlayerData,
 } from "@/server/games/base/BaseGameModel";
 import CheckersPlayer, {
   CheckersPlayerInterface,
 } from "@/server/games/checkers/CheckersPlayer";
+import { repository } from "@/server/games/checkers/CheckersRepository";
 import { SocketServerSide } from "@/server/types";
-import { OriginTargetPayload } from "@/shared/types/socket-communication/games/checkers";
+import {
+  GameData,
+  OriginTargetPayload,
+} from "@/shared/types/socket-communication/games/checkers";
 
 export interface CheckersGameInterface
   extends BaseGameModelInterface<CheckersPlayerInterface> {
-  gameData: {
-    initialized: boolean;
-    variable: string;
-  } | null;
+  gameData: GameData | null;
 }
 
 export default class CheckersGame extends BaseGameModel<
   CheckersGameInterface,
   CheckersPlayer
 > {
-  gameData: {
-    initialized: boolean;
-    variable: string;
-  } | null = null;
-  constructor(key: string, playerIds: string[]) {
-    super(key, playerIds);
+  gameData: GameData | null = null;
+  constructor(key: string, players: PlayerData[]) {
+    super(key, players);
     this.initializeGame();
-    this.saveState();
+  }
+
+  destroyGame() {
+    repository.delete(this);
   }
 
   rebuildImplementation(data: CheckersGameInterface): void {
@@ -46,16 +48,20 @@ export default class CheckersGame extends BaseGameModel<
     const players = this.players.map((player) => {
       const playerData: CheckersPlayerInterface = {
         id: player.id,
+        name: player.name,
         ready: player.ready,
+        connected: player.connected,
         extraData: player.extraData,
       };
       return playerData;
     });
     return {
       id: this.id,
+      gameToBeDeleted: this.gameToBeDeleted,
       gameStarted: this.gameStarted,
       gameData: this.gameData,
       players,
+      deleteTimeoutReference: null,
     };
   }
 
@@ -63,25 +69,26 @@ export default class CheckersGame extends BaseGameModel<
     this.gameData = { initialized: true, variable: "" };
   }
 
-  initializePlayers(playerIds: string[]): void {
-    const players: CheckersPlayer[] = [];
-    for (const playerId of playerIds) {
-      players.push(new CheckersPlayer(playerId, ""));
+  initializePlayers(players: PlayerData[]): void {
+    const gamePlayers: CheckersPlayer[] = [];
+    for (const player of players) {
+      gamePlayers.push(new CheckersPlayer(player.id, player.name));
     }
-    this.players = players;
+    this.players = gamePlayers;
   }
 
   initializeGameImplementation(): void {
-    this.gameData = {
-      initialized: true,
-      variable: "",
-    };
+    this.gameData = { initialized: true, variable: "" };
   }
+
   sendGameStatePayload(socket: SocketServerSide): void {
     if (this.gameData === null) {
       return;
     }
-    socket.emit("CheckersGameStateUpdateResponse", this.gameData);
+    socket.emit("CheckersGameStateUpdateResponse", {
+      gameData: this.gameData,
+      gameToBeDeleted: this.gameToBeDeleted,
+    });
   }
 
   startGame(): void {

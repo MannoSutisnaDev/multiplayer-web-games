@@ -83,8 +83,14 @@ export default function Lobbies() {
                   <div className="player-info">
                     {Users.length ?? 0} / {GameType.maxPlayers}
                   </div>
-                  <div className="join" onClick={() => joinLobby(lobby.id)}>
-                    <button className="btn">Join</button>
+                  <div className="join">
+                    <button
+                      className="btn"
+                      disabled={lobby.gameStarted}
+                      onClick={() => joinLobby(lobby.id)}
+                    >
+                      Join
+                    </button>
                   </div>
                 </div>
               );

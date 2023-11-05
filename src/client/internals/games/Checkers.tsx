@@ -1,25 +1,29 @@
 import { useContext, useEffect, useRef, useState } from "react";
 
+import GameToBeDeletedModal from "@/client/internals/modal/implementation/GameToBeDeletedModal";
 import { socket } from "@/client/internals/socket/socket";
 import { ToastMessageContextWrapper } from "@/client/internals/toast-messages/ToastMessageContext";
+import { GameToBeDeleted } from "@/server/games/base/BaseGameModel";
+import { GameData } from "@/shared/types/socket-communication/games/checkers";
 
 export default function Checkers() {
   const { addErrorMessage } = useContext(ToastMessageContextWrapper);
-  const [gameData, setGameData] = useState<{
-    initialized: boolean;
-    variable: string;
-  } | null>(null);
-  const [textField, setTextField] = useState(gameData?.variable ?? "");
+  const [gameData, setGameData] = useState<GameData | null>(null);
+  const [gameToBeDeleted, setGameToBeDeleted] =
+    useState<GameToBeDeleted | null>(null);
   const signaledReady = useRef<boolean>(false);
 
   useEffect(() => {
     socket.on("GenericResponseError", ({ error }: { error: string }) => {
       addErrorMessage?.(error);
     });
-    socket.on("CheckersGameStateUpdateResponse", (gameData) => {
-      setGameData(gameData);
-      setTextField(gameData.variable);
-    });
+    socket.on(
+      "CheckersGameStateUpdateResponse",
+      ({ gameData, gameToBeDeleted }) => {
+        setGameData(gameData);
+        setGameToBeDeleted(gameToBeDeleted);
+      }
+    );
 
     if (!signaledReady.current) {
       signaledReady.current = true;
@@ -33,23 +37,16 @@ export default function Checkers() {
   }, [addErrorMessage]);
 
   return (
-    <div>
-      <h1>Checkers</h1>
-      <div>{gameData !== null ? "Done loading" : "Loading..."}</div>
+    <>
+      <GameToBeDeletedModal
+        show={!!gameToBeDeleted}
+        title={gameToBeDeleted?.title ?? ""}
+        message={gameToBeDeleted?.message ?? ""}
+      />
       <div>
-        <input
-          type="text"
-          value={textField}
-          onChange={(e) => setTextField(e.target.value)}
-        />
-        <button
-          onClick={() => {
-            socket.emit("Test", textField);
-          }}
-        >
-          Change state
-        </button>
+        <h1>Checkers</h1>
+        <div>{gameData !== null ? "Done loading" : "Loading..."}</div>
       </div>
-    </div>
+    </>
   );
 }

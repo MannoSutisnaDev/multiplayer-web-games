@@ -16,5 +16,6 @@ export interface SocketClientSide
 
 export interface BaseModalProps {
   show: boolean;
-  close: () => void;
+  modalInnerExtraClass?: string;
+  close?: () => void;
 }

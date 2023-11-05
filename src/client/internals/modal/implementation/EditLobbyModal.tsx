@@ -1,14 +1,17 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useContext, useEffect,useState  } from "react";
+import { useContext, useEffect, useState } from "react";
 
 import ModalWrapper from "@/client/internals/modal/ModalWrapper";
 import { socket } from "@/client/internals/socket/socket";
 import { SocketContextWrapper } from "@/client/internals/socket/SocketContext";
 import { ToastMessageContextWrapper } from "@/client/internals/toast-messages/ToastMessageContext";
 import { BaseModalProps } from "@/client/types";
-import { GameTypes,GameTypesData  } from "@/shared/types/socket-communication/general";
+import {
+  GameTypes,
+  GameTypesData,
+} from "@/shared/types/socket-communication/general";
 import { LobbyWithGameTypeAndUsers } from "@/shared/types/socket-communication/types";
 import { entries } from "@/shared/utility";
 
@@ -28,7 +31,7 @@ function EditLobbyModalPre({ lobby, close }: Props) {
   useEffect(() => {
     socket.on("EditLobbyResponseSuccess", () => {
       setIsSubmitting(false);
-      close();
+      close?.();
     });
     socket.on("EditLobbyResponseError", ({ error }) => {
       setIsSubmitting(false);
@@ -51,7 +54,7 @@ function EditLobbyModalPre({ lobby, close }: Props) {
         className="close"
         onClick={(e) => {
           e.stopPropagation();
-          close();
+          close?.();
         }}
       >
         &times;

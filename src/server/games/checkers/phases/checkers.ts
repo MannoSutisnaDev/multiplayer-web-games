@@ -4,7 +4,6 @@ import prisma from "@/server/db";
 import CheckersGame from "@/server/games/checkers/CheckersGame";
 import { repository } from "@/server/games/checkers/CheckersRepository";
 import { setPhase } from "@/server/lobby/phases/adjust-phase";
-import { GeneralClientToServer } from "@/server/lobby/phases/general";
 import { PhaseLobbies } from "@/server/lobby/phases/lobbies";
 import {
   findUser,
@@ -21,7 +20,6 @@ import {
   RequestGameStateUpdate,
   Test,
 } from "@/shared/types/socket-communication/games/checkers";
-import { Disconnect } from "@/shared/types/socket-communication/lobby/general";
 import { Phase } from "@/shared/types/socket-communication/types";
 
 const findUserAndGame = async (
@@ -88,10 +86,6 @@ const leaveGame = (socket: SocketServerSide) => {
   asyncExecution();
 };
 
-const disconnect = (socket: SocketServerSide) => {
-  GeneralClientToServer.disconnect(socket);
-};
-
 const requestGameStateUpdate = (socket: SocketServerSide) => {
   const asyncExecution = async () => {
     const result = await findUserAndGame(socket);
@@ -122,7 +116,6 @@ export const PhaseCheckers: Phase = {
     [ReadyToPlay]: readyToPlay,
     [MovePiece]: movePiece,
     [LeaveGame]: leaveGame,
-    [Disconnect]: disconnect,
     [RequestGameStateUpdate]: requestGameStateUpdate,
     [Test]: test,
   },

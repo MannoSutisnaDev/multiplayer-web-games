@@ -2,7 +2,9 @@ import RebuildableModelInterface from "@/server/games/base/RebuildableModelInter
 
 export interface BasePlayerModelInterface {
   id: string;
+  name: string;
   ready: boolean;
+  connected: boolean;
 }
 
 export default abstract class BasePlayerModel<
@@ -13,11 +15,15 @@ export default abstract class BasePlayerModel<
     RebuildableModelInterface<PlayerInterface>
 {
   id: string;
+  name: string;
   ready: boolean;
+  connected: boolean;
 
-  constructor(id: string) {
+  constructor(id: string, name: string) {
     this.id = id;
+    this.name = name;
     this.ready = false;
+    this.connected = true;
   }
 
   abstract rebuildImplementation(data: PlayerInterface): void;

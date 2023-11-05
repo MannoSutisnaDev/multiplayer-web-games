@@ -11,14 +11,15 @@ export default class CheckersPlayer
   implements CheckersPlayerInterface
 {
   extraData: string = "";
-  constructor(id: string = "", extraData: string = "") {
-    super(id);
+  constructor(id: string = "", name: string = "", extraData: string = "") {
+    super(id, name);
     this.extraData = extraData;
   }
 
   rebuildImplementation(data: CheckersPlayerInterface) {
     this.id = data.id;
     this.ready = data.ready;
+    this.name = data.name;
     this.extraData = data.extraData;
   }
 }

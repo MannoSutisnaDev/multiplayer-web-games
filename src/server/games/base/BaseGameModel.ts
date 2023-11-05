@@ -5,7 +5,7 @@ import BasePlayerModel, {
   BasePlayerModelInterface,
 } from "@/server/games/base/BasePlayerModel";
 import RebuildableModelInterface from "@/server/games/base/RebuildableModelInterface";
-import { getSocketsByUserIds } from "@/server/lobby/utility";
+import { deleteLobby, getSocketsByUserIds } from "@/server/lobby/utility";
 import { SocketServerSide } from "@/server/types";
 
 export interface BaseGameModelInterface<
@@ -14,7 +14,25 @@ export interface BaseGameModelInterface<
   id: string;
   players: PlayerInterface[];
   gameStarted: boolean;
+  gameToBeDeleted: GameToBeDeleted;
+  deleteTimeoutReference: DeleteTimeoutReference | null;
 }
+
+interface DeleteTimeoutReference {
+  seconds: number;
+  maxSeconds: number;
+  reference: NodeJS.Timeout | null;
+}
+
+export interface PlayerData {
+  id: string;
+  name: string;
+}
+
+export type GameToBeDeleted = {
+  title: string;
+  message: string;
+} | null;
 
 export default abstract class BaseGameModel<
     GameInterface extends BaseGameModelInterface = BaseGameModelInterface,
@@ -25,19 +43,32 @@ export default abstract class BaseGameModel<
   id: string;
   players: PlayerModel[];
   gameStarted: boolean;
+  gameToBeDeleted: {
+    title: string;
+    message: string;
+  } | null;
+  deleteTimeoutReference: DeleteTimeoutReference | null = null;
 
-  constructor(key: string, playerIds: string[]) {
+  constructor(key: string, playerIds: PlayerData[]) {
+    this.gameToBeDeleted = null;
     this.id = key;
     this.gameStarted = false;
     this.players = [];
     this.initializePlayers(playerIds);
   }
 
+  destroy() {
+    this.destroyGame();
+    deleteLobby(this.id);
+  }
+
+  abstract destroyGame(): void;
+
   abstract rebuildImplementation(data: GameInterface): void;
 
   abstract createState(): GameInterface;
 
-  abstract initializePlayers(playerIds: string[]): void;
+  abstract initializePlayers(players: PlayerData[]): void;
 
   abstract startGame(): void;
 
@@ -129,9 +160,114 @@ export default abstract class BaseGameModel<
     this.sendGameStatePayload(socket);
   }
 
-  handleConnect() {}
+  handleConnectionChange(
+    playerId: string,
+    connected: boolean
+  ): { allConnected: boolean } {
+    const player = this.players.find((player) => player.id === playerId);
+    if (!player) {
+      return {
+        allConnected: false,
+      };
+    }
+    player.connected = connected;
+    const connectedPlayers = this.players.filter((player) => player.connected);
+    const allConnected = connectedPlayers.length === this.players.length;
+    return {
+      allConnected,
+    };
+  }
 
-  handleDisconnect() {}
+  handleConnect(playerId: string): void {
+    const { allConnected } = this.handleConnectionChange(playerId, true);
+    if (!allConnected) {
+      this.sendGameState();
+      return;
+    }
+    const ref = this.deleteTimeoutReference;
+    if (!ref) {
+      return;
+    }
+    if (ref.reference) {
+      clearInterval(ref.reference);
+    }
+    this.deleteTimeoutReference = null;
+    this.gameToBeDeleted = null;
+    this.sendGameState();
+  }
+
+  handleDisconnect(playerId: string): void {
+    const { allConnected } = this.handleConnectionChange(playerId, false);
+    if (allConnected) {
+      this.sendGameState();
+      return;
+    }
+    this.scheduleDelete(
+      "Not all players are connected",
+      (playersDisconnected: string[], secondsLeft) => {
+        const playerNames = playersDisconnected.join(", ");
+        const playersDisconnectedMessage =
+          playersDisconnected.length > 1
+            ? `The following players are disconnected: (${playerNames})`
+            : `The following player is disconnected: (${playerNames})`;
+        return `${playersDisconnectedMessage}
+        
+        This game will be deleted in ${secondsLeft}`;
+      },
+      60
+    );
+  }
+
+  scheduleDelete(
+    title: string,
+    message: (playersDisconnected: string[], secondsLeft: number) => string,
+    afterSeconds: number
+  ) {
+    if (this.deleteTimeoutReference) {
+      return;
+    }
+    this.deleteTimeoutReference = {
+      seconds: 0,
+      maxSeconds: afterSeconds,
+      reference: null,
+    };
+
+    const sendScheduledDeleteMessage = () => {
+      const ref = this.deleteTimeoutReference;
+      if (!ref) {
+        return;
+      }
+      const secondsLeft = ref.maxSeconds - ref.seconds;
+      this.gameToBeDeleted = {
+        title,
+        message: message(
+          this.players
+            .filter((player) => !player.connected)
+            .map((player) => player.name),
+          secondsLeft
+        ),
+      };
+      this.sendGameState();
+    };
+
+    sendScheduledDeleteMessage();
+    const interval = setInterval(() => {
+      const ref = this.deleteTimeoutReference;
+      if (!ref) {
+        clearInterval(interval);
+        return;
+      }
+      ref.seconds += 1;
+      sendScheduledDeleteMessage();
+      if (ref.seconds < ref.maxSeconds || !ref.reference) {
+        return;
+      }
+      clearInterval(ref.reference);
+      this.deleteTimeoutReference = null;
+      this.destroy();
+    }, 1000);
+    this.deleteTimeoutReference.reference = interval;
+  }
 
   leaveGame(playerId: string) {
     //TODO

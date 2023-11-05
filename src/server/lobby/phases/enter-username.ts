@@ -1,5 +1,4 @@
 import prisma from "@/server/db";
-import { GeneralClientToServer } from "@/server/lobby/phases/general";
 import { updateUserData } from "@/server/lobby/utility";
 import { SocketServerSide } from "@/server/types";
 import {
@@ -46,6 +45,5 @@ export const PhaseEnterUsername: Phase = {
   id: PhaseIdEnterUsername,
   functions: {
     [EnterUsername]: enterUsername,
-    ...GeneralClientToServer,
   },
 };

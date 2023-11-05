@@ -1,6 +1,8 @@
 import { User } from "@prisma/client";
 
 import prisma from "@/server/db";
+import BaseGameModel from "@/server/games/base/BaseGameModel";
+import { repository as checkersRepository } from "@/server/games/checkers/CheckersRepository";
 import { PhaseCheckers } from "@/server/games/checkers/phases/checkers";
 import { io } from "@/server/init";
 import { setPhase } from "@/server/lobby/phases/adjust-phase";
@@ -56,9 +58,7 @@ export const findLobby: (
   return lobby;
 };
 
-export const updateUserData = async (
-  socket: SocketServerSide
-): Promise<User | null> => {
+export const updateUserData = async (socket: SocketServerSide) => {
   const sessionId = socket?.data?.sessionId;
   const user = await findUser(socket);
   if (!sessionId || !user) {
@@ -69,7 +69,7 @@ export const updateUserData = async (
       lobbyId: "",
       gameType: null,
     });
-    return null;
+    return;
   }
   let lobby: LobbyWithGameType | null = null;
   if (user.joinedLobbyId) {
@@ -95,7 +95,6 @@ export const updateUserData = async (
     lobbyId: lobby?.id,
     gameType: lobby?.gameStarted ? gameType : null,
   });
-  return user;
 };
 
 export const sendUpdatedLobbies = async () => {
@@ -227,19 +226,92 @@ export const sendUpdatedLobby = async (lobbyId: string | null) => {
   }
 };
 
-export const handleDisconnect = async (socket: SocketServerSide) => {
-  const user = await findUser(socket);
+const handleConnectionChange = async (
+  socket: SocketServerSide,
+  connected: boolean
+) => {
+  const sessionId = socket?.data?.sessionId;
+  if (!sessionId) {
+    return;
+  }
+  const user = await prisma.user.findFirst({
+    where: {
+      id: { equals: sessionId },
+    },
+    include: {
+      JoinedLobby: {
+        include: {
+          GameType: {},
+        },
+      },
+    },
+  });
   if (!user) {
     return;
   }
   await prisma.user.update({
     where: { id: user.id },
-    data: {
-      connected: false,
+    data: { connected },
+  });
+  const joinedLobby = user.JoinedLobby;
+  if (!joinedLobby) {
+    return;
+  }
+  if (joinedLobby.gameStarted) {
+    const gameType = joinedLobby.GameType.name as GameTypes;
+    let game: BaseGameModel | undefined;
+    switch (gameType) {
+      case GameTypes.Checkers:
+        game = checkersRepository.findOne(joinedLobby.id);
+        break;
+    }
+    if (game) {
+      if (connected) {
+        game.handleConnect(user.id);
+      } else {
+        game.handleDisconnect(user.id);
+      }
+    }
+  }
+  sendUpdatedLobby(joinedLobby.id);
+  sendUpdatedLobbies();
+};
+
+export const handleConnect = async (socket: SocketServerSide) => {
+  handleConnectionChange(socket, true);
+};
+
+export const handleDisconnect = async (socket: SocketServerSide) => {
+  handleConnectionChange(socket, false);
+};
+
+export const deleteLobby = async (lobbyId: string) => {
+  const lobby = await prisma.lobby.findFirst({
+    where: { id: lobbyId },
+    include: {
+      Users: {},
     },
   });
-  if (user.joinedLobbyId) {
-    sendUpdatedLobbies();
-    sendUpdatedLobby(user.joinedLobbyId);
+  if (!lobby) {
+    return;
   }
+  const userIds = lobby.Users.map((user) => user.id);
+  if (userIds.length > 0) {
+    await prisma.user.updateMany({
+      where: { id: { in: userIds } },
+      data: { joinedLobbyId: null, ready: false },
+    });
+  }
+  await prisma.gameState.delete({
+    where: { lobbyId: lobby.id },
+  });
+  await prisma.lobby.delete({
+    where: { id: lobby.id },
+  });
+  const sockets = getSocketsByUserIds(userIds);
+  for (const socket of sockets) {
+    setPhase(socket, PhaseLobbies);
+    updateUserData(socket);
+  }
+  sendUpdatedLobbies();
 };

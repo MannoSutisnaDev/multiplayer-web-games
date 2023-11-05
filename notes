@@ -124,7 +124,6 @@ Todo 2023-11-05:
 - Als het spel klaar is een modal tonen dat de spelers in X aantal seconden terug worden gestuurd naar de lobby
 - join button alleen klikbaar maken als het spel niet al bezig is en er niet al het max aantal spelers in zit
 - leave logic uitbreiden
-- wanneer een speler is gedisconnect, de kans geven om terug te komen, anders het spel sluiten
 - checkers implementeren in de code base
 - deployen
 
