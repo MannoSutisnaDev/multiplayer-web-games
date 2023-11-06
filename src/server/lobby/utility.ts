@@ -258,13 +258,7 @@ const handleConnectionChange = async (
     return;
   }
   if (joinedLobby.gameStarted) {
-    const gameType = joinedLobby.GameType.name as GameTypes;
-    let game: BaseGameModel | undefined;
-    switch (gameType) {
-      case GameTypes.Checkers:
-        game = checkersRepository.findOne(joinedLobby.id);
-        break;
-    }
+    const game = findGameBasedOnLobby(joinedLobby);
     if (game) {
       if (connected) {
         game.handleConnect(user.id);
@@ -365,4 +359,70 @@ export const leaveLobby = async (socket: SocketServerSide) => {
     sendUpdatedLobby(lobbyId);
     updateUserData(socket);
   }
+};
+
+export const userCanConnect = async (
+  socket: SocketServerSide,
+  sessionId: string
+): Promise<boolean> => {
+  if (!sessionId) {
+    return true;
+  }
+  const resetUser = () => {
+    setPhase(socket, PhaseEnterUsername);
+    socket.emit("UpdateUserData", {
+      username: "",
+      sessionId: "",
+      lobbyId: "",
+      gameType: null,
+    });
+  };
+  const sockets = getSocketsIndexed();
+  if (sockets[sessionId]) {
+    resetUser();
+    socket.emit("GenericResponseError", {
+      error:
+        "There is already a player connected that has the ID you're trying to connect with. You have create a new user.",
+    });
+    return false;
+  }
+  const user = await prisma.user.findFirst({
+    where: { id: sessionId },
+  });
+  if (!user || !user.joinedLobbyId) {
+    return true;
+  }
+  const lobby = await prisma.lobby.findFirst({
+    where: { id: user.joinedLobbyId },
+    include: { GameType: {} },
+  });
+  if (!lobby || !lobby.gameStarted) {
+    return true;
+  }
+  const game = findGameBasedOnLobby(lobby);
+  if (!game) {
+    return true;
+  }
+  if (!game.getPlayer(sessionId)) {
+    resetUser();
+    socket.emit("GenericResponseError", {
+      error:
+        "The game has already started and your not part of it. You have to set a new username.",
+    });
+    return false;
+  }
+  return true;
+};
+
+export const findGameBasedOnLobby = (
+  lobby: LobbyWithGameType
+): BaseGameModel | undefined => {
+  let game: BaseGameModel | undefined = undefined;
+  const gameType = lobby.GameType.name as GameTypes;
+  switch (gameType) {
+    case GameTypes.Checkers:
+      game = checkersRepository.findOne(lobby.id);
+      break;
+  }
+  return game;
 };

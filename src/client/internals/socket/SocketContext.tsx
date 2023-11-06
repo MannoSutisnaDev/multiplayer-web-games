@@ -1,7 +1,14 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { createContext, Dispatch, PropsWithChildren, SetStateAction , useEffect, useState } from "react";
+import {
+  createContext,
+  Dispatch,
+  PropsWithChildren,
+  SetStateAction,
+  useEffect,
+  useState,
+} from "react";
 
 import {
   establishSocketConnection,
@@ -10,8 +17,6 @@ import {
 import { GameTypes } from "@/shared/types/socket-communication/general";
 
 interface SocketContextWrapperInterface {
-  dataLoaded: boolean;
-  setDataLoaded: Dispatch<SetStateAction<boolean>>;
   username: string;
   setUsername: Dispatch<SetStateAction<string>>;
   sessionId: string;
@@ -24,8 +29,6 @@ interface SocketContextWrapperInterface {
 
 export const SocketContextWrapper =
   createContext<SocketContextWrapperInterface>({
-    dataLoaded: false,
-    setDataLoaded: () => {},
     username: "",
     setUsername: () => {},
     sessionId: "",
@@ -37,7 +40,6 @@ export const SocketContextWrapper =
   });
 
 export default function SocketContext({ children }: PropsWithChildren) {
-  const [dataLoaded, setDataLoaded] = useState(false);
   const [username, setUsername] = useState("");
   const [sessionId, setSessionId] = useState("");
   const [lobbyId, setLobbyId] = useState("");
@@ -55,11 +57,18 @@ export default function SocketContext({ children }: PropsWithChildren) {
       "UpdateUserData",
       ({ username, sessionId, lobbyId, gameType }) => {
         const asyncExecution = async () => {
-          setDataLoaded(true);
-          setUsername(username ?? "");
-          setSessionId(sessionId ?? "");
-          setLobbyId(lobbyId ?? "");
-          setPlayingGame(gameType);
+          if (!sessionId) {
+            sessionStorage.removeItem("sessionId");
+            setUsername("");
+            setSessionId("");
+            setLobbyId("");
+            setPlayingGame(null);
+          } else {
+            setUsername(username ?? "");
+            setSessionId(sessionId ?? "");
+            setLobbyId(lobbyId ?? "");
+            setPlayingGame(gameType);
+          }
         };
         asyncExecution();
       }
@@ -71,8 +80,6 @@ export default function SocketContext({ children }: PropsWithChildren) {
   return (
     <SocketContextWrapper.Provider
       value={{
-        dataLoaded,
-        setDataLoaded,
         username,
         setUsername,
         sessionId,

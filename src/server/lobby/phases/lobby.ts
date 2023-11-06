@@ -1,10 +1,7 @@
-import { PrismaClientUnknownRequestError } from "@prisma/client/runtime/library";
-
 import prisma from "@/server/db";
 import BaseGameModel from "@/server/games/base/BaseGameModel";
 import { createGame as createCheckersGame } from "@/server/games/checkers/CheckersRepository";
 import {
-  deleteLobby,
   findUser,
   findUserWithLobbyItOwns,
   getSocketByUserId,

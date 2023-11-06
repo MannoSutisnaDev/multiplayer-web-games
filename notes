@@ -136,3 +136,7 @@ https://blog.joewoods.dev/programming/storing-really-big-strings-with-prisma/
 - iedreen een lobby verlaten betekend de lobby verwijderen plus bij alle players aangeven dat ze niet meer in die lobby zitten
 
 - bij het inloggen checken of er al een player is ingelogd met het session ID, zo ja dan naar het enter username scherm sturen
+
+2023-11-06
+
+- testen of the canConnect guard goed werkt

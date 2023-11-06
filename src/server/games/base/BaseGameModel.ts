@@ -290,4 +290,8 @@ export default abstract class BaseGameModel<
       10
     );
   }
+
+  getPlayer(playerId: string): PlayerModel | undefined {
+    return this.players.find((player) => player.id === playerId);
+  }
 }
