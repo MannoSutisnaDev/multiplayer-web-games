@@ -57,22 +57,21 @@ export default function SocketContext({ children }: PropsWithChildren) {
       "UpdateUserData",
       ({ username, sessionId, lobbyId, gameType }) => {
         const asyncExecution = async () => {
-          if (!sessionId) {
-            sessionStorage.removeItem("sessionId");
-            setUsername("");
-            setSessionId("");
-            setLobbyId("");
-            setPlayingGame(null);
-          } else {
-            setUsername(username ?? "");
-            setSessionId(sessionId ?? "");
-            setLobbyId(lobbyId ?? "");
-            setPlayingGame(gameType);
-          }
+          setUsername(username ?? "");
+          setSessionId(sessionId ?? "");
+          setLobbyId(lobbyId ?? "");
+          setPlayingGame(gameType);
         };
         asyncExecution();
       }
     );
+    socket.on("DeleteSessionId", () => {
+      sessionStorage.removeItem("sessionId");
+      setUsername("");
+      setSessionId("");
+      setLobbyId("");
+      setPlayingGame(null);
+    });
     return () => {
       socket.removeAllListeners("UpdateUserData");
     };

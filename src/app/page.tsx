@@ -21,10 +21,9 @@ export default function Home() {
       if (!sessionId) {
         return;
       }
-      setUsernameContext(username);
-      socket.auth = { sessionId };
       sessionStorage.setItem("sessionId", sessionId);
       setSessionId(sessionId);
+      setUsernameContext(username);
     });
     socket.on("GenericResponseError", ({ error }) => {
       setIsSubmitting(false);

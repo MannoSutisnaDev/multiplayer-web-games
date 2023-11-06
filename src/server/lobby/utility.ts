@@ -1,10 +1,14 @@
-import { User } from "@prisma/client";
+import { GameState, User } from "@prisma/client";
 
 import prisma from "@/server/db";
 import BaseGameModel from "@/server/games/base/BaseGameModel";
 import { repository as checkersRepository } from "@/server/games/checkers/CheckersRepository";
 import { PhaseCheckers } from "@/server/games/checkers/phases/checkers";
 import { io } from "@/server/init";
+import {
+  removeScheduledDelete,
+  scheduleDelete,
+} from "@/server/lobby/delete-user";
 import { setPhase } from "@/server/lobby/phases/adjust-phase";
 import { PhaseEnterUsername } from "@/server/lobby/phases/enter-username";
 import { PhaseLobbies } from "@/server/lobby/phases/lobbies";
@@ -16,6 +20,10 @@ import {
   UserWithLobbyItOwns,
 } from "@/shared/types/socket-communication/types";
 
+// export const DeleteAfterSeconds = 1000 * 300;
+
+export const DeleteAfterSeconds = 60 * 10;
+
 export const findUser = async (
   socket: SocketServerSide
 ): Promise<User | null> => {
@@ -23,6 +31,15 @@ export const findUser = async (
   const user = await prisma.user.findFirst({
     where: {
       id: { equals: sessionId },
+    },
+  });
+  return user;
+};
+
+export const findUserById = async (userId: string): Promise<User | null> => {
+  const user = await prisma.user.findFirst({
+    where: {
+      id: { equals: userId },
     },
   });
   return user;
@@ -81,7 +98,8 @@ export const updateUserData = async (socket: SocketServerSide) => {
   } else if (!lobby.gameStarted) {
     setPhase(socket, PhaseLobby);
   } else {
-    switch (lobby.GameType.name as GameTypes) {
+    const gameType = lobby.GameType?.name;
+    switch (gameType) {
       case GameTypes.Checkers:
         setPhase(socket, PhaseCheckers);
         break;
@@ -272,11 +290,23 @@ const handleConnectionChange = async (
 };
 
 export const handleConnect = async (socket: SocketServerSide) => {
+  const sessionId = socket.handshake.auth?.sessionId;
+  removeScheduledDelete(sessionId);
+  if (!(await guardUserConnect(socket, sessionId))) {
+    return;
+  }
+  socket.data.sessionId = sessionId;
+  await updateUserData(socket);
   handleConnectionChange(socket, true);
 };
 
 export const handleDisconnect = async (socket: SocketServerSide) => {
-  handleConnectionChange(socket, false);
+  await handleConnectionChange(socket, false);
+  const sessionId = socket?.data?.sessionId;
+  if (!sessionId) {
+    return;
+  }
+  scheduleDelete(sessionId);
 };
 
 export const deleteLobby = async (lobbyId: string) => {
@@ -284,6 +314,7 @@ export const deleteLobby = async (lobbyId: string) => {
     where: { id: lobbyId },
     include: {
       Users: {},
+      GameState: {},
     },
   });
   if (!lobby) {
@@ -296,22 +327,40 @@ export const deleteLobby = async (lobbyId: string) => {
       data: { joinedLobbyId: null, ready: false },
     });
   }
-  await prisma.gameState.delete({
-    where: { lobbyId: lobby.id },
+  await prisma.lobby.update({
+    where: { id: lobby.id },
+    data: { lobbyOwnerId: null },
   });
+  try {
+    if (lobby.GameState) {
+      await prisma.gameState.delete({
+        where: { lobbyId: lobby.id },
+      });
+    }
+  } catch (e) {}
   await prisma.lobby.delete({
     where: { id: lobby.id },
   });
   const sockets = getSocketsByUserIds(userIds);
-  for (const socket of sockets) {
-    setPhase(socket, PhaseLobbies);
-    updateUserData(socket);
-  }
+  await Promise.all(
+    sockets.map(
+      (socket) =>
+        new Promise<void>(async (resolve) => {
+          await updateUserData(socket);
+          resolve();
+        })
+    )
+  );
   sendUpdatedLobbies();
 };
 
-export const leaveLobby = async (socket: SocketServerSide) => {
-  const user = await findUser(socket);
+export const leaveLobby = async (data: SocketServerSide | string) => {
+  let user: User | null;
+  if (typeof data === "string") {
+    user = await findUserById(data);
+  } else {
+    user = await findUser(data);
+  }
   if (!user) {
     return;
   }
@@ -323,7 +372,7 @@ export const leaveLobby = async (socket: SocketServerSide) => {
     where: { id: user.id },
     data: { joinedLobbyId: null, ready: false },
   });
-  const lobby = await prisma.lobby.findFirst({
+  let lobby = await prisma.lobby.findFirst({
     where: { id: lobbyId },
     include: {
       Users: {
@@ -338,15 +387,27 @@ export const leaveLobby = async (socket: SocketServerSide) => {
     where: { id: user.id },
     data: { ready: false, joinedLobbyId: null },
   });
-  setPhase(socket, PhaseLobbies);
-  updateUserData(socket);
-  sendUpdatedLobbies();
   const game = checkersRepository.findOne(lobby.id);
   if (game) {
     game.leaveGame(user.id);
   }
+  if (typeof data !== "string") {
+    await updateUserData(data);
+  }
+  // Fetch lobbies again to determine the updated connected players count
+  lobby = await prisma.lobby.findFirst({
+    where: { id: lobbyId },
+    include: {
+      Users: {
+        where: { connected: true },
+      },
+    },
+  });
+  if (!lobby) {
+    return;
+  }
   if (lobby.Users.length === 0) {
-    await deleteLobby(lobby.id);
+    deleteLobby(lobby.id);
     return;
   } else if (lobby?.lobbyOwnerId === user.id) {
     const player = lobby.Users[0];
@@ -357,8 +418,10 @@ export const leaveLobby = async (socket: SocketServerSide) => {
     });
     sendUpdatedLobbies();
     sendUpdatedLobby(lobbyId);
-    updateUserData(socket);
+    return;
   }
+  sendUpdatedLobbies();
+  sendUpdatedLobby(lobbyId);
 };
 
 export const guardUserConnect = async (
@@ -368,26 +431,30 @@ export const guardUserConnect = async (
   if (!sessionId) {
     return true;
   }
+  const sendBackToEnterUsername = (error: string | null = null) => {
+    setPhase(socket, PhaseEnterUsername);
+    socket.emit("DeleteSessionId");
+    if (error) {
+      socket.emit("GenericResponseError", {
+        error,
+      });
+    }
+  };
   const sockets = getSocketsIndexed();
   if (sockets[sessionId]) {
-    setPhase(socket, PhaseEnterUsername);
-    socket.emit("UpdateUserData", {
-      username: "",
-      sessionId: "",
-      lobbyId: "",
-      gameType: null,
-    });
-    socket.emit("GenericResponseError", {
-      error:
-        "There is already a player connected that has the ID you're trying to connect with. You have to create a new user.",
-    });
-    sendUpdatedLobbies();
+    sendBackToEnterUsername(
+      "There is already a player connected that has the ID you're trying to connect with. You have to create a new user."
+    );
     return false;
   }
   const user = await prisma.user.findFirst({
     where: { id: sessionId },
   });
-  if (!user || !user.joinedLobbyId) {
+  if (!user) {
+    sendBackToEnterUsername();
+    return false;
+  }
+  if (!user.joinedLobbyId) {
     return true;
   }
   const sendBackToLobbiesAndConnectUser = async (message: string) => {
@@ -416,6 +483,7 @@ export const guardUserConnect = async (
   const players = lobby.Users.filter(
     (player) => player.connected && player.id !== sessionId
   );
+
   if (players.length >= lobby.GameType.maxPlayers) {
     sendBackToLobbiesAndConnectUser(
       "The maximum amount of players are already in the lobby. You have been returned to the lobby overview."
@@ -442,8 +510,7 @@ export const findGameBasedOnLobby = (
   lobby: LobbyWithGameType
 ): BaseGameModel | undefined => {
   let game: BaseGameModel | undefined = undefined;
-  const gameType = lobby.GameType.name as GameTypes;
-  switch (gameType) {
+  switch (lobby.GameType.name as GameTypes) {
     case GameTypes.Checkers:
       game = checkersRepository.findOne(lobby.id);
       break;
@@ -455,4 +522,94 @@ export const setAllUsersToDisconnected = async () => {
   await prisma.user.updateMany({
     data: { connected: false },
   });
+};
+
+type UpdatedAt = {
+  updatedAt: Date;
+} | null;
+
+const determineEntriesToDeleteWithNoActivity = (
+  entries: UpdatedAt[],
+  deleteAfterSeconds: number = DeleteAfterSeconds
+) => {
+  const entriesToDelete: UpdatedAt[] = [];
+  for (const entry of entries) {
+    if (!entry) {
+      continue;
+    }
+    const now = new Date();
+    const timeDiffSeconds = (now.getTime() - entry.updatedAt.getTime()) / 1000;
+    if (timeDiffSeconds >= deleteAfterSeconds) {
+      entriesToDelete.push(entry);
+    }
+  }
+  return entriesToDelete;
+};
+
+const cleanUpUsersNoActivity = async () => {
+  const users = await prisma.user.findMany({
+    where: { joinedLobbyId: null, connected: false },
+  });
+  const usersToDelete = determineEntriesToDeleteWithNoActivity(users) as User[];
+  const userIds = usersToDelete.map((user) => user.id);
+  console.log({ deleteUsersNoActivity: userIds });
+  await prisma.user.deleteMany({
+    where: { id: { in: userIds } },
+  });
+};
+
+const cleanUpLobbiesNoActivity = async () => {
+  const lobbies = await prisma.lobby.findMany({
+    where: { gameStarted: true },
+    include: { GameState: {} },
+  });
+  const gameStates = lobbies
+    .map((lobby) => lobby.GameState)
+    .filter((gameState) => gameState);
+  const gameStatesToDelete = determineEntriesToDeleteWithNoActivity(
+    gameStates
+  ) as GameState[];
+  const lobbyIds = gameStatesToDelete.map((gameState) => gameState.lobbyId);
+  console.log({ deleteLobbiesNoActivity: lobbyIds });
+  await Promise.all(
+    lobbyIds.map(
+      (lobbyId) =>
+        new Promise<void>(async (resolve) => {
+          await deleteLobby(lobbyId);
+          resolve();
+        })
+    )
+  );
+};
+
+const cleanUpLobbiesIncorrectOwner = async () => {
+  const lobbies = await prisma.lobby.findMany({
+    include: { Users: {} },
+  });
+  const lobbyIdsToDelete: string[] = [];
+  for (const lobby of lobbies) {
+    const correctOwner = lobby.Users.find(
+      (user) => user.id === lobby.lobbyOwnerId
+    );
+    if (correctOwner) {
+      continue;
+    }
+    lobbyIdsToDelete.push(lobby.id);
+  }
+  console.log({ deleteLobbiesIncorrectOwner: lobbyIdsToDelete });
+  await Promise.all(
+    lobbyIdsToDelete.map(
+      (lobbyId) =>
+        new Promise<void>(async (resolve) => {
+          await deleteLobby(lobbyId);
+          resolve();
+        })
+    )
+  );
+};
+
+export const periodicCleanUpFunction = async () => {
+  await cleanUpLobbiesNoActivity();
+  await cleanUpLobbiesIncorrectOwner();
+  cleanUpUsersNoActivity();
 };

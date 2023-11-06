@@ -11,13 +11,14 @@ datasource db {
 }
 
 model User {
-  id            String  @id @default(cuid())
-  username      String  @unique
+  id            String   @id @default(cuid())
+  username      String   @unique
   joinedLobbyId String?
-  JoinedLobby   Lobby?  @relation(fields: [joinedLobbyId], references: [id], name: "lobby_player")
-  connected     Boolean @default(false)
-  ready         Boolean @default(false)
-  LobbyItOwns   Lobby?  @relation("lobby_owner")
+  connected     Boolean  @default(false)
+  ready         Boolean  @default(false)
+  updatedAt     DateTime @updatedAt
+  JoinedLobby   Lobby?   @relation(fields: [joinedLobbyId], references: [id], name: "lobby_player")
+  LobbyItOwns   Lobby?   @relation("lobby_owner")
 }
 
 model Lobby {
@@ -40,7 +41,8 @@ model GameType {
 }
 
 model GameState {
-  lobbyId String @id @default(cuid())
-  Lobby   Lobby  @relation(fields: [lobbyId], references: [id], name: "lobby_link")
-  state   Bytes
+  lobbyId   String   @id @default(cuid())
+  state     Bytes
+  updatedAt DateTime @updatedAt
+  Lobby     Lobby    @relation(fields: [lobbyId], references: [id], name: "lobby_link")
 }

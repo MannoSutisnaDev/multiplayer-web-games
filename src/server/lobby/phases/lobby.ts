@@ -162,9 +162,15 @@ const startGame = (socket: SocketServerSide) => {
     await game?.saveState();
     const playerIds = lobby.Users.map((user) => user.id);
     const sockets = getSocketsByUserIds(playerIds);
-    for (const socket of sockets) {
-      updateUserData(socket);
-    }
+    await Promise.all(
+      sockets.map(
+        (socket) =>
+          new Promise<void>(async (resolve) => {
+            await updateUserData(socket);
+            resolve();
+          })
+      )
+    );
     sendUpdatedLobbies();
   };
   asyncExecution();
@@ -247,12 +253,12 @@ const kickUser = (socket: SocketServerSide, { userId }: { userId: string }) => {
         ready: false,
       },
     });
-    sendUpdatedLobby(user.joinedLobbyId);
-    sendUpdatedLobbies();
     const targetUserSocket = getSocketByUserId(userId);
     if (targetUserSocket) {
-      updateUserData(targetUserSocket);
+      await updateUserData(targetUserSocket);
     }
+    sendUpdatedLobby(user.joinedLobbyId);
+    sendUpdatedLobbies();
   };
   asyncExecution();
 };

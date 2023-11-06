@@ -1,4 +1,6 @@
 import prisma from "@/server/db";
+import { setPhase } from "@/server/lobby/phases/adjust-phase";
+import { PhaseLobby } from "@/server/lobby/phases/lobby";
 import {
   sendUpdatedLobbies,
   sendUpdatedLobbiesToPlayer,
@@ -75,8 +77,8 @@ const createLobby = (
         joinedLobbyId: lobby.id,
       },
     });
+    setPhase(socket, PhaseLobby);
     socket.emit("CreateLobbyResponseSuccess", { lobbyId: lobby.id });
-    updateUserData(socket);
     sendUpdatedLobbies();
   };
   asyncExecution();
@@ -115,6 +117,12 @@ const joinLobby = (
       });
       return;
     }
+    if (!lobby.GameType) {
+      socket.emit("GenericResponseError", {
+        error: "Invalid game type.",
+      });
+      return;
+    }
     if (lobby.Users.length + 1 > lobby.GameType.maxPlayers) {
       socket.emit("GenericResponseError", {
         error: "Lobby is full.",
@@ -129,8 +137,8 @@ const joinLobby = (
         joinedLobbyId: lobby.id,
       },
     });
+    setPhase(socket, PhaseLobby);
     socket.emit("JoinLobbyResponseSuccess", { lobbyId });
-    updateUserData(socket);
     sendUpdatedLobbies();
     sendUpdatedLobby(lobby.id);
   };

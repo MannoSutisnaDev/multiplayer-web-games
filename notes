@@ -140,3 +140,7 @@ https://blog.joewoods.dev/programming/storing-really-big-strings-with-prisma/
 2023-11-06
 
 - testen of the canConnect guard goed werkt
+- fixen dat redirecten naar een lobby heel lang duurt
+- zorgen dat een user automatisch wordt verwijderd als hij disconnect en niet reconnect na een bepaalde tijd
+- sessionStorage sessionID verwijderen als user niet gevonden kan worden
+- start game transitie fixen

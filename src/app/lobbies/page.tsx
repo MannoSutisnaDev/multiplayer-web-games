@@ -33,6 +33,13 @@ export default function Lobbies() {
         setLobbyId(lobbyId);
       }
     );
+    socket.on("CreateLobbyResponseSuccess", ({ lobbyId }) => {
+      setIsSubmitting(false);
+      if (!lobbyId) {
+        return;
+      }
+      setLobbyId(lobbyId);
+    });
     socket.on("UpdateLobbiesResponse", ({ lobbies }) => {
       setLobbies(lobbies);
     });

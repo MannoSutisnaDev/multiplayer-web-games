@@ -14,8 +14,8 @@ export interface PhaseEnterUsernameTypes {
     [EnterUsernameResponseSuccess]: ({
       sessionId,
     }: {
-      username: string;
       sessionId: string;
+      username: string;
     }) => void;
     [GenericResponseError]: GenericErrorResponseFunction;
   };

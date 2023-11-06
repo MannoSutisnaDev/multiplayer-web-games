@@ -1,5 +1,7 @@
 import prisma from "@/server/db";
-import { updateUserData } from "@/server/lobby/utility";
+import { setPhase } from "@/server/lobby/phases/adjust-phase";
+import { PhaseLobbies } from "@/server/lobby/phases/lobbies";
+import { sendUpdatedLobbies, updateUserData } from "@/server/lobby/utility";
 import { SocketServerSide } from "@/server/types";
 import {
   EnterUsername,
@@ -32,11 +34,12 @@ const enterUsername = (
       },
     });
     socket.data.sessionId = user.id;
+    setPhase(socket, PhaseLobbies);
     socket.emit("EnterUsernameResponseSuccess", {
       sessionId: user.id,
-      username,
+      username: user.username,
     });
-    updateUserData(socket);
+    sendUpdatedLobbies();
   };
   asyncExecution();
 };

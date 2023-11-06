@@ -1,5 +1,6 @@
 import { GameTypes } from "@/shared/types/socket-communication/general";
 export const UpdateUserData = "UpdateUserData";
+export const DeleteSessionId = "DeleteSessionId";
 export const Disconnect = "disconnect";
 
 export interface GeneralSocketFunctions {
@@ -15,6 +16,7 @@ export interface GeneralSocketFunctions {
       lobbyId?: string;
       gameType: GameTypes | null;
     }) => void;
+    [DeleteSessionId]: () => void;
   };
   ClientToServer: {
     [Disconnect]: () => void;

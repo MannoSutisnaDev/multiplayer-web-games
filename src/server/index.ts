@@ -2,11 +2,10 @@ import next, { NextApiHandler } from "next";
 
 import { app, io, server } from "@/server/init";
 import {
-  guardUserConnect,
   handleConnect,
   handleDisconnect,
+  periodicCleanUpFunction,
   setAllUsersToDisconnected,
-  updateUserData,
 } from "@/server/lobby/utility";
 import { SocketServerSide } from "@/server/types";
 import { Disconnect } from "@/shared/types/socket-communication/lobby/general";
@@ -20,21 +19,13 @@ import { rebuildGames as rebuildCheckerGames } from "@/server/games/checkers/Che
 
 nextApp.prepare().then(async () => {
   await setAllUsersToDisconnected();
+  setInterval(periodicCleanUpFunction, 1000 * 600);
   await rebuildCheckerGames();
   io.on("connection", (socket: SocketServerSide) => {
     socket.on(Disconnect, () => {
       handleDisconnect(socket);
     });
-    const asyncExecution = async () => {
-      const sessionId = socket.handshake.auth?.sessionId;
-      if (!(await guardUserConnect(socket, sessionId))) {
-        return;
-      }
-      socket.data.sessionId = sessionId;
-      await updateUserData(socket);
-      handleConnect(socket);
-    };
-    asyncExecution();
+    handleConnect(socket);
   });
 
   app.all("*", (req: any, res: any) => nextHandler(req, res));
