@@ -2,9 +2,9 @@ import next, { NextApiHandler } from "next";
 
 import { app, io, server } from "@/server/init";
 import {
+  cleanUp,
   handleConnect,
   handleDisconnect,
-  periodicCleanUpFunction,
   setAllUsersToDisconnected,
 } from "@/server/lobby/utility";
 import { SocketServerSide } from "@/server/types";
@@ -19,7 +19,8 @@ import { rebuildGames as rebuildCheckerGames } from "@/server/games/checkers/Che
 
 nextApp.prepare().then(async () => {
   await setAllUsersToDisconnected();
-  setInterval(periodicCleanUpFunction, 1000 * 600);
+  await cleanUp();
+  setInterval(cleanUp, 1000 * 600);
   await rebuildCheckerGames();
   io.on("connection", (socket: SocketServerSide) => {
     socket.on(Disconnect, () => {
