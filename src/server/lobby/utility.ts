@@ -361,14 +361,15 @@ export const leaveLobby = async (socket: SocketServerSide) => {
   }
 };
 
-export const userCanConnect = async (
+export const guardUserConnect = async (
   socket: SocketServerSide,
   sessionId: string
 ): Promise<boolean> => {
   if (!sessionId) {
     return true;
   }
-  const resetUser = () => {
+  const sockets = getSocketsIndexed();
+  if (sockets[sessionId]) {
     setPhase(socket, PhaseEnterUsername);
     socket.emit("UpdateUserData", {
       username: "",
@@ -376,14 +377,11 @@ export const userCanConnect = async (
       lobbyId: "",
       gameType: null,
     });
-  };
-  const sockets = getSocketsIndexed();
-  if (sockets[sessionId]) {
-    resetUser();
     socket.emit("GenericResponseError", {
       error:
-        "There is already a player connected that has the ID you're trying to connect with. You have create a new user.",
+        "There is already a player connected that has the ID you're trying to connect with. You have to create a new user.",
     });
+    sendUpdatedLobbies();
     return false;
   }
   const user = await prisma.user.findFirst({
@@ -392,11 +390,39 @@ export const userCanConnect = async (
   if (!user || !user.joinedLobbyId) {
     return true;
   }
+  const sendBackToLobbiesAndConnectUser = async (message: string) => {
+    setPhase(socket, PhaseLobbies);
+    await prisma.user.update({
+      where: { id: user.id },
+      data: { joinedLobbyId: null, ready: false, connected: true },
+    });
+    socket.data.sessionId = sessionId;
+    socket.emit("UpdateUserData", {
+      username: user.username,
+      sessionId: sessionId,
+      lobbyId: "",
+      gameType: null,
+    });
+    socket.emit("GenericResponseError", { error: message });
+    sendUpdatedLobbies();
+  };
   const lobby = await prisma.lobby.findFirst({
     where: { id: user.joinedLobbyId },
-    include: { GameType: {} },
+    include: { GameType: {}, Users: {} },
   });
-  if (!lobby || !lobby.gameStarted) {
+  if (!lobby) {
+    return true;
+  }
+  const players = lobby.Users.filter(
+    (player) => player.connected && player.id !== sessionId
+  );
+  if (players.length >= lobby.GameType.maxPlayers) {
+    sendBackToLobbiesAndConnectUser(
+      "The maximum amount of players are already in the lobby. You have been returned to the lobby overview."
+    );
+    return false;
+  }
+  if (!lobby.gameStarted) {
     return true;
   }
   const game = findGameBasedOnLobby(lobby);
@@ -404,11 +430,9 @@ export const userCanConnect = async (
     return true;
   }
   if (!game.getPlayer(sessionId)) {
-    resetUser();
-    socket.emit("GenericResponseError", {
-      error:
-        "The game has already started and your not part of it. You have to set a new username.",
-    });
+    sendBackToLobbiesAndConnectUser(
+      "The game has already started and your not part of it. You have been returned to the lobby overview."
+    );
     return false;
   }
   return true;
@@ -425,4 +449,10 @@ export const findGameBasedOnLobby = (
       break;
   }
   return game;
+};
+
+export const setAllUsersToDisconnected = async () => {
+  await prisma.user.updateMany({
+    data: { connected: false },
+  });
 };

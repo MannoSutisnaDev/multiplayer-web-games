@@ -104,7 +104,9 @@ const joinLobby = (
       },
       include: {
         GameType: {},
-        Users: {},
+        Users: {
+          where: { connected: true },
+        },
       },
     });
     if (!lobby) {

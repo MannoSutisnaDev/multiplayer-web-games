@@ -2,10 +2,11 @@ import next, { NextApiHandler } from "next";
 
 import { app, io, server } from "@/server/init";
 import {
+  guardUserConnect,
   handleConnect,
   handleDisconnect,
+  setAllUsersToDisconnected,
   updateUserData,
-  userCanConnect,
 } from "@/server/lobby/utility";
 import { SocketServerSide } from "@/server/types";
 import { Disconnect } from "@/shared/types/socket-communication/lobby/general";
@@ -18,6 +19,7 @@ const nextHandler: NextApiHandler = nextApp.getRequestHandler();
 import { rebuildGames as rebuildCheckerGames } from "@/server/games/checkers/CheckersRepository";
 
 nextApp.prepare().then(async () => {
+  await setAllUsersToDisconnected();
   await rebuildCheckerGames();
   io.on("connection", (socket: SocketServerSide) => {
     socket.on(Disconnect, () => {
@@ -25,7 +27,7 @@ nextApp.prepare().then(async () => {
     });
     const asyncExecution = async () => {
       const sessionId = socket.handshake.auth?.sessionId;
-      if (!(await userCanConnect(socket, sessionId))) {
+      if (!(await guardUserConnect(socket, sessionId))) {
         return;
       }
       socket.data.sessionId = sessionId;
