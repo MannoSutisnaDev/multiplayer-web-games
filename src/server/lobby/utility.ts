@@ -604,7 +604,6 @@ const cleanUpUsersNoActivity = async () => {
   });
   const usersToDelete = determineEntriesToDeleteWithNoActivity(users) as User[];
   const userIds = usersToDelete.map((user) => user.id);
-  console.log({ deleteUsersNoActivity: userIds });
   await prisma.user.deleteMany({
     where: { id: { in: userIds } },
   });
@@ -622,7 +621,6 @@ const cleanUpLobbiesNoActivity = async () => {
     gameStates
   ) as GameState[];
   const lobbyIds = gameStatesToDelete.map((gameState) => gameState.lobbyId);
-  console.log({ deleteLobbiesNoActivity: lobbyIds });
   await Promise.all(
     lobbyIds.map(
       (lobbyId) =>
@@ -648,7 +646,6 @@ const cleanUpLobbiesIncorrectOwner = async () => {
     }
     lobbyIdsToDelete.push(lobby.id);
   }
-  console.log({ deleteLobbiesIncorrectOwner: lobbyIdsToDelete });
   await Promise.all(
     lobbyIdsToDelete.map(
       (lobbyId) =>

@@ -63,12 +63,12 @@
 }
 
 .modal-backdrop {
-  .modal-inner.game-to-be-deleted-wrapper {
+  .modal-inner.interrupting-message-wrapper {
     align-items: flex-start;
   }
 }
 
-.game-to-be-deleted {
+.interrupting-message {
   display: flex;
   flex-direction: column;
   justify-content: center;

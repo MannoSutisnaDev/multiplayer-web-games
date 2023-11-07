@@ -57,8 +57,11 @@ export default abstract class BaseGameModel<
     this.initializePlayers(playerIds);
   }
 
-  destroy() {
+  destroy(hardDelete: boolean = false) {
     this.destroyGame();
+    if (!hardDelete) {
+      return;
+    }
     deleteLobby(this.id);
   }
 
@@ -128,16 +131,24 @@ export default abstract class BaseGameModel<
     return this.id;
   }
 
+  allPlayersReady(): boolean {
+    const readyPlayers = this.players.filter((player) => player.ready);
+    return readyPlayers.length === this.players.length;
+  }
+
   setPlayerReady(playerId: string): boolean {
+    if (this.allPlayersReady()) {
+      return true;
+    }
     const player = this.players.find((player) => player.id === playerId);
     if (!player) {
       return false;
     }
     player.ready = true;
-    const readyPlayers = this.players.filter((player) => player.ready);
-    if (!this.gameStarted && readyPlayers.length === this.players.length) {
+    if (!this.gameStarted && this.allPlayersReady()) {
       this.gameStarted = true;
       this.startGame();
+      this.sendGameState();
     }
     return true;
   }
@@ -147,6 +158,9 @@ export default abstract class BaseGameModel<
   }
 
   sendGameState() {
+    if (!this.gameStarted) {
+      return;
+    }
     this.saveState();
     const playerIds = this.players.map((player) => player.id);
     const sockets = getSocketsByUserIds(playerIds);
@@ -264,7 +278,7 @@ export default abstract class BaseGameModel<
       }
       clearInterval(ref.reference);
       this.deleteTimeoutReference = null;
-      this.destroy();
+      this.destroy(true);
     }, 1000);
     this.deleteTimeoutReference.reference = interval;
   }

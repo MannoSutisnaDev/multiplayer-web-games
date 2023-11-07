@@ -151,4 +151,11 @@ https://blog.joewoods.dev/programming/storing-really-big-strings-with-prisma/
 
 - transfer over client code for checkers
 - testen
+
+- game eindigen en returnen naar lobby fixen
+- checken of meerdere lobbies tegelijkertijd kunnen (en messages goed verstuurd worden)
+- altijd maar 1 delete kunnen schedulen voor een game
+- voor een piece de cursor naar grabbing veranderen tijdens het draggen
+  https://stackoverflow.com/questions/70852871/css-cursor-when-dragging
+
 - deployen

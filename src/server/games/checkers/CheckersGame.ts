@@ -82,6 +82,26 @@ export default class CheckersGame extends BaseGameModel<
       players.push(checkersPlayer);
     }
     this.players = players;
+    this.cells = this.buildCells(data.cells);
+    this.gameToBeDeleted = null;
+    this.currentPlayerIndex = data.currentPlayerIndex;
+    this.gameOver = data.gameOver;
+    this.playableCells = data.playableCells;
+    this.gameStarted = data.gameStarted;
+    this.deleteTimeoutReference = null;
+  }
+
+  buildCells(cells: CellCollection) {
+    for (const data of cells) {
+      for (const cell of data) {
+        if (cell.playerPiece) {
+          const piece = new Piece();
+          piece.rebuildImplementation(cell.playerPiece);
+          cell.playerPiece = piece;
+        }
+      }
+    }
+    return cells;
   }
 
   createState() {
@@ -96,15 +116,6 @@ export default class CheckersGame extends BaseGameModel<
       };
       return playerData;
     });
-    for (const data of this.cells) {
-      for (const cell of data) {
-        if (cell.playerPiece) {
-          const piece = new Piece();
-          piece.rebuildImplementation(cell.playerPiece);
-          cell.playerPiece = piece;
-        }
-      }
-    }
     return {
       id: this.id,
       gameToBeDeleted: this.gameToBeDeleted,
@@ -192,24 +203,24 @@ export default class CheckersGame extends BaseGameModel<
     playableCells: PlayableCells
   ): void {
     if (playerIndex === 1) {
-      for (let i = 0; i < PLAYER_PIECES; i++) {
-        const playableCell = playableCells[i];
-        collection[playableCell.row][playableCell.column].playerPiece =
-          this.generatePiece(i, playerIndex);
-      }
+      collection[6][6].playerPiece = this.generatePiece(0, playerIndex);
+      // for (let i = 0; i < PLAYER_PIECES; i++) {
+      //   const playableCell = playableCells[i];
+      //   collection[playableCell.row][playableCell.column].playerPiece =
+      //     this.generatePiece(i, playerIndex);
+      // }
     } else {
-      let endIndex = playableCells.length - 1;
-      for (let i = PLAYER_PIECES - 1; i >= 0; i--) {
-        const playableCell = playableCells[endIndex - i];
-        collection[playableCell.row][playableCell.column].playerPiece =
-          this.generatePiece(i, playerIndex);
-      }
+      collection[7][7].playerPiece = this.generatePiece(0, playerIndex);
+      // let endIndex = playableCells.length - 1;
+      // for (let i = PLAYER_PIECES - 1; i >= 0; i--) {
+      //   const playableCell = playableCells[endIndex - i];
+      //   collection[playableCell.row][playableCell.column].playerPiece =
+      //     this.generatePiece(i, playerIndex);
+      // }
     }
   }
 
-  startGame(): void {
-    this.sendGameState();
-  }
+  startGame(): void {}
 
   getPlayerIndexViaSocket(socket: SocketServerSide): number {
     const sessionId = socket?.data?.sessionId ?? null;
@@ -362,20 +373,20 @@ export default class CheckersGame extends BaseGameModel<
     if (gameOver) {
       this.gameOver = {
         playerThatWonIndex: lastPlayerIndex,
-        returnToLobbyTime: 10,
+        returnToLobbyTime: 5,
       };
-      let secondsLeftToReset = 10;
       const interval = setInterval(() => {
         if (!this.gameOver) {
           return;
         }
-        const deleteGame = secondsLeftToReset === 0;
-        this.gameOver.returnToLobbyTime -= 1;
-        this.sendGameState();
-        if (deleteGame) {
-          clearInterval(interval);
-          deleteGameAndReturnToLobby(this.id);
+        if (this.gameOver.returnToLobbyTime > 0) {
+          this.sendGameState();
+          this.gameOver.returnToLobbyTime -= 1;
+          return;
         }
+        this.sendGameState();
+        clearInterval(interval);
+        deleteGameAndReturnToLobby(this.id);
       }, 1000);
     }
   }
@@ -390,7 +401,7 @@ export default class CheckersGame extends BaseGameModel<
     const winMessage =
       winningPlayer.id === player.id
         ? "You won!"
-        : `Player: '${player.name}' has won!`;
+        : `Player: '${winningPlayer.name}' has won!`;
     return `${winMessage} \n\n You will be returned to the loby in ${secondsLeftToReset} seconds.`;
   };
 

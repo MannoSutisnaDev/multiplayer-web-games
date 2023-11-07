@@ -93,7 +93,10 @@ export default function Lobbies() {
                   <div className="join">
                     <button
                       className="btn"
-                      disabled={lobby.gameStarted}
+                      disabled={
+                        lobby.gameStarted ||
+                        lobby.Users.length === lobby.GameType.maxPlayers
+                      }
                       onClick={() => joinLobby(lobby.id)}
                     >
                       Join

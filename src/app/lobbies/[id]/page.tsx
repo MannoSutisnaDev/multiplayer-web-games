@@ -3,7 +3,7 @@
 import { ReactNode, useContext } from "react";
 
 import LobbyComponent from "@/app/lobbies/[id]/LobbyComponent";
-import Checkers from "@/client/internals/games/Checkers";
+import Checkers from "@/client/internals/games/checkers/Checkers";
 import { SocketContextWrapper } from "@/client/internals/socket/SocketContext";
 import { GameTypes } from "@/shared/types/socket-communication/general";
 

@@ -5,7 +5,6 @@ import {
   sendUpdatedLobbies,
   sendUpdatedLobbiesToPlayer,
   sendUpdatedLobby,
-  updateUserData,
 } from "@/server/lobby/utility";
 import { SocketServerSide } from "@/server/types";
 import { GameTypes } from "@/shared/types/socket-communication/general";
@@ -117,9 +116,9 @@ const joinLobby = (
       });
       return;
     }
-    if (!lobby.GameType) {
+    if (lobby.Users.find((player) => player.id === user.id)) {
       socket.emit("GenericResponseError", {
-        error: "Invalid game type.",
+        error: "You're already in this lobby.",
       });
       return;
     }
