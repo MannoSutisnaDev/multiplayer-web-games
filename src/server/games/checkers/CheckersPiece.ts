@@ -17,7 +17,7 @@ export default class Piece
     this.moveMode = MoveMode.REGULAR;
   }
 
-  rebuildImplementation(data: PieceInterface) {
+  rebuild(data: PieceInterface) {
     this.index = data.index;
     this.playerIndex = data.playerIndex;
     this.moveMode = data.moveMode;

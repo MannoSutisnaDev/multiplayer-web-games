@@ -1,3 +1,3 @@
 export default interface RebuildableModelInterface<T> {
-  rebuildImplementation: (data: T) => void;
+  rebuild: (data: T) => void;
 }

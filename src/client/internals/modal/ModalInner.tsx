@@ -54,7 +54,7 @@ export default function ModalInner({
       };
       exitAnimation();
     }
-  }, [isPresent]);
+  }, [animate, isPresent, safeToRemove, scope]);
 
   return (
     <motion.div

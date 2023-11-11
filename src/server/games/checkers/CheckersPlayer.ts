@@ -1,15 +1,9 @@
-import BasePlayerModel, {
-  BasePlayerModelInterface,
-} from "@/server/games/base/BasePlayerModel";
+import BasePlayerModel from "@/server/games/base/BasePlayerModel";
+import { CheckersPlayerInterface } from "@/server/games/types";
 import {
   GamePosition,
   PiecesDirection,
 } from "@/shared/types/socket-communication/games/game-types";
-
-export interface CheckersPlayerInterface extends BasePlayerModelInterface {
-  direction: PiecesDirection | null;
-  pieceThatHasStrikedPosition: GamePosition | null;
-}
 
 export default class CheckersPlayer
   extends BasePlayerModel<CheckersPlayerInterface>
@@ -34,9 +28,6 @@ export default class CheckersPlayer
   }
 
   rebuildImplementation(data: CheckersPlayerInterface) {
-    this.id = data.id;
-    this.ready = data.ready;
-    this.name = data.name;
     this.direction = data.direction;
     this.pieceThatHasStrikedPosition = data.pieceThatHasStrikedPosition;
   }

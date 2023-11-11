@@ -6,27 +6,23 @@ import Board from "@/client/internals/games/checkers/Board";
 import InterruptingMessageModal from "@/client/internals/modal/implementation/InterruptingMessageModal";
 import { socket } from "@/client/internals/socket/socket";
 import { ToastMessageContextWrapper } from "@/client/internals/toast-messages/ToastMessageContext";
-import { GameToBeDeleted } from "@/server/games/base/BaseGameModel";
-import { GameDataInterface } from "@/server/games/checkers/CheckersGame";
+import { CheckersGameDataInterface } from "@/server/games/types";
 
 export default function Checkers() {
   const { addErrorMessage } = useContext(ToastMessageContextWrapper);
-  const [gameData, setGameData] = useState<GameDataInterface | null>(null);
-  const [gameToBeDeleted, setGameToBeDeleted] =
-    useState<GameToBeDeleted | null>(null);
+  const [gameData, setGameData] = useState<CheckersGameDataInterface | null>(
+    null
+  );
   const signaledReady = useRef<boolean>(false);
 
   useEffect(() => {
     socket.on("GenericResponseError", ({ error }: { error: string }) => {
       addErrorMessage?.(error);
     });
-    socket.on(
-      "CheckersGameStateUpdateResponse",
-      ({ gameData, gameToBeDeleted }) => {
-        setGameData(gameData);
-        setGameToBeDeleted(gameToBeDeleted);
-      }
-    );
+    socket.on("CheckersGameStateUpdateResponse", ({ gameData }) => {
+      console.log({ gameData });
+      setGameData(gameData);
+    });
 
     if (!signaledReady.current) {
       signaledReady.current = true;
@@ -66,14 +62,9 @@ export default function Checkers() {
   return (
     <>
       <InterruptingMessageModal
-        show={!gameToBeDeleted && !!gameData?.gameOverMessage}
-        title={"Game over"}
-        message={gameData?.gameOverMessage ?? ""}
-      />
-      <InterruptingMessageModal
-        show={!!gameToBeDeleted}
-        title={gameToBeDeleted?.title ?? ""}
-        message={gameToBeDeleted?.message ?? ""}
+        show={!!gameData?.interruptingMessage}
+        title={gameData?.interruptingMessage?.title ?? ""}
+        message={gameData?.interruptingMessage?.message ?? ""}
       />
       <div className="main-wrapper">
         <button

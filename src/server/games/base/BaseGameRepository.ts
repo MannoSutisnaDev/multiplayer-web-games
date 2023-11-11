@@ -1,11 +1,6 @@
-import BaseGameModel, {
-  BaseGameModelInterface,
-} from "@/server/games/base/BaseGameModel";
-import BasePlayerModel from "@/server/games/base/BasePlayerModel";
+import BaseGameModel from "@/server/games/base/BaseGameModel";
 
-export default abstract class BaseGameRepository<
-  T extends BaseGameModel<BaseGameModelInterface, BasePlayerModel>,
-> {
+export default abstract class BaseGameRepository<T extends BaseGameModel> {
   storage: Map<string, T>;
   constructor() {
     this.storage = new Map();

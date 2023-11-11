@@ -159,3 +159,12 @@ https://blog.joewoods.dev/programming/storing-really-big-strings-with-prisma/
   https://stackoverflow.com/questions/70852871/css-cursor-when-dragging
 
 - deployen
+
+Learn typescript abstractions:
+https://code.lol/post/programming/higher-kinded-types/ (HKT)
+
+2023-11-08
+
+- schedule game delete refactor afmaken
+- maken dat in de sendGameState functie de payload aangepast kan worden per socket
+- interruptingMessage property weghalen van het Game object, aangeven in de type return van de SendGameStatePayload functie dat er een interrupting message in kan zitten

@@ -1,7 +1,7 @@
 import prisma from "@/server/db";
-import { PlayerData } from "@/server/games/base/BaseGameModel";
 import BaseGameRepository from "@/server/games/base/BaseGameRepository";
 import CheckersGame from "@/server/games/checkers/CheckersGame";
+import { PlayerData } from "@/server/games/types";
 import { GameTypes } from "@/shared/types/socket-communication/general";
 
 export default class CheckersRepository extends BaseGameRepository<CheckersGame> {}

@@ -4,10 +4,10 @@ import { useState } from "react";
 
 import Cell from "@/client/internals/games/checkers/Cell";
 import { SelectedPiece } from "@/client/internals/games/checkers/types";
-import { GameDataInterface } from "@/server/games/checkers/CheckersGame";
+import { CheckersGameDataInterface } from "@/server/games/types";
 
 interface Props {
-  gameData: GameDataInterface | null;
+  gameData: CheckersGameDataInterface | null;
 }
 
 export default function Board({ gameData }: Props) {

@@ -1,17 +1,21 @@
-import BaseGameModel, {
-  BaseGameModelInterface,
-  PlayerData,
-} from "@/server/games/base/BaseGameModel";
+import BaseGameModel from "@/server/games/base/BaseGameModel";
 import Piece from "@/server/games/checkers/CheckersPiece";
-import CheckersPlayer, {
-  CheckersPlayerInterface,
-} from "@/server/games/checkers/CheckersPlayer";
+import CheckersPlayer from "@/server/games/checkers/CheckersPlayer";
 import { repository } from "@/server/games/checkers/CheckersRepository";
 import {
   canStrikeOtherOpponentPiece,
   determineGameOver,
   validateMove,
 } from "@/server/games/checkers/utils";
+import {
+  CheckersGameDataInterface,
+  CheckersGameInterface,
+  CheckersPlayerInterface,
+  DeleteGameTypes,
+  GameStateModifier,
+  InterruptingMessage,
+  PlayerData,
+} from "@/server/games/types";
 import { deleteGameAndReturnToLobby } from "@/server/lobby/utility";
 import { SocketServerSide } from "@/server/types";
 import {
@@ -28,28 +32,10 @@ const COLUMNS = 8;
 const ROWS = 8;
 const PLAYER_PIECES = 12;
 
-export interface CheckersGameInterface
-  extends BaseGameModelInterface<CheckersPlayerInterface> {
-  cells: CellCollection;
-  currentPlayerIndex: number;
-  gameOver: {
-    playerThatWonIndex: number;
-    returnToLobbyTime: number;
-  } | null;
-  playableCells: PlayableCells;
-}
-
-export interface GameDataInterface {
-  players: CheckersPlayerInterface[];
-  cells: CellCollection;
-  currentPlayerIndex: number;
-  selfPlayerIndex: number;
-  gameOverMessage: string | null;
-}
-
 export default class CheckersGame extends BaseGameModel<
   CheckersGameInterface,
-  CheckersPlayer
+  CheckersPlayer,
+  CheckersGameDataInterface
 > {
   cells: CellCollection;
   currentPlayerIndex: number;
@@ -78,17 +64,15 @@ export default class CheckersGame extends BaseGameModel<
     const players: CheckersPlayer[] = [];
     for (const player of data.players) {
       const checkersPlayer = new CheckersPlayer();
-      checkersPlayer.rebuildImplementation(player);
+      checkersPlayer.rebuild(player);
       players.push(checkersPlayer);
     }
     this.players = players;
     this.cells = this.buildCells(data.cells);
-    this.gameToBeDeleted = null;
     this.currentPlayerIndex = data.currentPlayerIndex;
     this.gameOver = data.gameOver;
-    this.playableCells = data.playableCells;
+    this.playableCells = this.determinePlayableCells();
     this.gameStarted = data.gameStarted;
-    this.deleteTimeoutReference = null;
   }
 
   buildCells(cells: CellCollection) {
@@ -96,7 +80,7 @@ export default class CheckersGame extends BaseGameModel<
       for (const cell of data) {
         if (cell.playerPiece) {
           const piece = new Piece();
-          piece.rebuildImplementation(cell.playerPiece);
+          piece.rebuild(cell.playerPiece);
           cell.playerPiece = piece;
         }
       }
@@ -116,16 +100,23 @@ export default class CheckersGame extends BaseGameModel<
       };
       return playerData;
     });
+    let deleteTimeoutReference = null;
+    if (this.deleteTimeoutReference) {
+      deleteTimeoutReference = {
+        ...this.deleteTimeoutReference,
+        reference: null,
+      };
+    }
     return {
       id: this.id,
-      gameToBeDeleted: this.gameToBeDeleted,
       cells: this.cells,
       currentPlayerIndex: this.currentPlayerIndex,
       gameOver: this.gameOver,
-      playableCells: this.playableCells,
+      playableCells: [],
       gameStarted: this.gameStarted,
       players,
-      deleteTimeoutReference: null,
+      gameStateModifiers: {},
+      deleteTimeoutReference,
     };
   }
 
@@ -135,6 +126,23 @@ export default class CheckersGame extends BaseGameModel<
       gamePlayers.push(new CheckersPlayer(player.id, player.name));
     }
     this.players = gamePlayers;
+  }
+
+  initializeDeleteGameTimeout(): boolean {
+    if (super.initializeDeleteGameTimeout()) {
+      return true;
+    }
+    const deleteRef = this.deleteTimeoutReference;
+    if (!deleteRef) {
+      return false;
+    }
+    const secondsLeft = this.getSecondsLeftDeleteTimeoutReference();
+    switch (deleteRef.deleteGameType) {
+      case DeleteGameTypes.Disconnected:
+        this.scheduleDeleteGameOver(secondsLeft);
+        break;
+    }
+    return true;
   }
 
   initializeGame() {
@@ -203,20 +211,18 @@ export default class CheckersGame extends BaseGameModel<
     playableCells: PlayableCells
   ): void {
     if (playerIndex === 1) {
-      collection[6][6].playerPiece = this.generatePiece(0, playerIndex);
-      // for (let i = 0; i < PLAYER_PIECES; i++) {
-      //   const playableCell = playableCells[i];
-      //   collection[playableCell.row][playableCell.column].playerPiece =
-      //     this.generatePiece(i, playerIndex);
-      // }
+      for (let i = 0; i < PLAYER_PIECES; i++) {
+        const playableCell = playableCells[i];
+        collection[playableCell.row][playableCell.column].playerPiece =
+          this.generatePiece(i, playerIndex);
+      }
     } else {
-      collection[7][7].playerPiece = this.generatePiece(0, playerIndex);
-      // let endIndex = playableCells.length - 1;
-      // for (let i = PLAYER_PIECES - 1; i >= 0; i--) {
-      //   const playableCell = playableCells[endIndex - i];
-      //   collection[playableCell.row][playableCell.column].playerPiece =
-      //     this.generatePiece(i, playerIndex);
-      // }
+      let endIndex = playableCells.length - 1;
+      for (let i = PLAYER_PIECES - 1; i >= 0; i--) {
+        const playableCell = playableCells[endIndex - i];
+        collection[playableCell.row][playableCell.column].playerPiece =
+          this.generatePiece(i, playerIndex);
+      }
     }
   }
 
@@ -373,7 +379,7 @@ export default class CheckersGame extends BaseGameModel<
     if (gameOver) {
       this.gameOver = {
         playerThatWonIndex: lastPlayerIndex,
-        returnToLobbyTime: 5,
+        returnToLobbyTime: 10,
       };
       const interval = setInterval(() => {
         if (!this.gameOver) {
@@ -405,29 +411,68 @@ export default class CheckersGame extends BaseGameModel<
     return `${winMessage} \n\n You will be returned to the loby in ${secondsLeftToReset} seconds.`;
   };
 
-  sendGameStatePayload(socket: SocketServerSide): void {
+  createGameStateImplementation(
+    socket: SocketServerSide
+  ): CheckersGameDataInterface {
+    const selfPlayerIndex = this.getPlayerIndexViaSocket(socket);
+    return {
+      players: this.players,
+      cells: this.getCells(this.sendCellsMirrored(selfPlayerIndex)),
+      currentPlayerIndex: this.currentPlayerIndex,
+      interruptingMessage: null,
+      selfPlayerIndex,
+    };
+  }
+
+  sendGameStatePayload(
+    socket: SocketServerSide,
+    gameData: CheckersGameDataInterface
+  ): void {
     const selfPlayerIndex = this.getPlayerIndexViaSocket(socket);
     if (selfPlayerIndex === -1) {
       return;
     }
-    let gameOverMessage: string | null = null;
-    if (this.gameOver) {
-      gameOverMessage = this.createGameOverMessage(
-        this.gameOver.playerThatWonIndex,
-        selfPlayerIndex,
-        this.gameOver.returnToLobbyTime
-      );
-    }
     socket.emit("CheckersGameStateUpdateResponse", {
-      gameToBeDeleted: this.gameToBeDeleted,
-      gameData: {
-        players: this.players,
-        cells: this.getCells(this.sendCellsMirrored(selfPlayerIndex)),
-        currentPlayerIndex: this.currentPlayerIndex,
-        selfPlayerIndex,
-        gameOverMessage,
-      },
+      gameData,
     });
+  }
+
+  getGameOverPlayerIndexes(socket: SocketServerSide): {
+    playerWhoWonIndex: number;
+    playerSelfIndex: number;
+  } {
+    const selfPlayerIndex = this.getPlayerIndexViaSocket(socket);
+    return {
+      playerWhoWonIndex: this.gameOver?.playerThatWonIndex ?? -1,
+      playerSelfIndex: selfPlayerIndex,
+    };
+  }
+
+  createGameOverInterruptingMessage(
+    socket: SocketServerSide
+  ): InterruptingMessage {
+    const { playerWhoWonIndex, playerSelfIndex } =
+      this.getGameOverPlayerIndexes(socket);
+    const secondsLeft = this.getSecondsLeftDeleteTimeoutReference();
+    const winningPlayer = this.players[playerWhoWonIndex];
+    const player = this.players[playerSelfIndex];
+    const winMessage =
+      winningPlayer.id === player.id
+        ? "You won!"
+        : `Player: '${winningPlayer.name}' has won!`;
+    const message = `${winMessage} \n\n You will be returned to the loby in ${secondsLeft} seconds.`;
+    return {
+      title: "Not all players are connected",
+      message,
+    };
+  }
+
+  scheduleDeleteGameOver(deleteAfterSeconds: number = 10) {
+    const func: GameStateModifier = (socket, gameData) => {
+      gameData.interruptingMessage =
+        this.createGameOverInterruptingMessage(socket);
+    };
+    this.scheduleDelete(DeleteGameTypes.GameOver, func, deleteAfterSeconds);
   }
 
   sendCellsMirrored(playerIndex: number) {

@@ -1,59 +1,38 @@
 import { type GameState } from "@prisma/client";
 
 import prisma from "@/server/db";
-import BasePlayerModel, {
-  BasePlayerModelInterface,
-} from "@/server/games/base/BasePlayerModel";
+import BasePlayerModel from "@/server/games/base/BasePlayerModel";
 import RebuildableModelInterface from "@/server/games/base/RebuildableModelInterface";
+import {
+  BaseGameDataInterface,
+  BaseGameModelInterface,
+  DeleteGameTypes,
+  DeleteTimeoutReference,
+  GameStateModifier,
+  InterruptingMessage,
+  PlayerData,
+} from "@/server/games/types";
 import { deleteLobby, getSocketsByUserIds } from "@/server/lobby/utility";
 import { SocketServerSide } from "@/server/types";
-
-export interface BaseGameModelInterface<
-  PlayerInterface extends BasePlayerModelInterface = BasePlayerModelInterface,
-> {
-  id: string;
-  players: PlayerInterface[];
-  gameStarted: boolean;
-  gameToBeDeleted: GameToBeDeleted;
-  deleteTimeoutReference: DeleteTimeoutReference | null;
-}
-
-interface DeleteTimeoutReference {
-  seconds: number;
-  maxSeconds: number;
-  reference: NodeJS.Timeout | null;
-}
-
-export interface PlayerData {
-  id: string;
-  name: string;
-}
-
-export type GameToBeDeleted = {
-  title: string;
-  message: string;
-} | null;
 
 export default abstract class BaseGameModel<
     GameInterface extends BaseGameModelInterface = BaseGameModelInterface,
     PlayerModel extends BasePlayerModel = BasePlayerModel,
+    GameDataInterface extends BaseGameDataInterface = BaseGameDataInterface,
   >
   implements BaseGameModelInterface, RebuildableModelInterface<GameInterface>
 {
   id: string;
   players: PlayerModel[];
   gameStarted: boolean;
-  gameToBeDeleted: {
-    title: string;
-    message: string;
-  } | null;
   deleteTimeoutReference: DeleteTimeoutReference | null = null;
+  gameStateModifiers: Record<string, GameStateModifier>;
 
   constructor(key: string, playerIds: PlayerData[]) {
-    this.gameToBeDeleted = null;
     this.id = key;
     this.gameStarted = false;
     this.players = [];
+    this.gameStateModifiers = {};
     this.initializePlayers(playerIds);
   }
 
@@ -75,7 +54,30 @@ export default abstract class BaseGameModel<
 
   abstract startGame(): void;
 
-  abstract sendGameStatePayload(socket: SocketServerSide): void;
+  abstract createGameStateImplementation(
+    socket: SocketServerSide
+  ): GameDataInterface;
+
+  removeGameStateModifier(key: string) {
+    delete this.gameStateModifiers[key];
+  }
+
+  addGameStateModifier(key: string, modifier: GameStateModifier) {
+    this.gameStateModifiers[key] = modifier;
+  }
+
+  createGameState(socket: SocketServerSide): GameDataInterface {
+    const gameState = this.createGameStateImplementation(socket);
+    for (const modifier of Object.values(this.gameStateModifiers)) {
+      modifier(socket, gameState);
+    }
+    return gameState;
+  }
+
+  abstract sendGameStatePayload(
+    socket: SocketServerSide,
+    data: GameDataInterface
+  ): void;
 
   async rebuild() {
     let gameState: GameState | null;
@@ -103,7 +105,13 @@ export default abstract class BaseGameModel<
       });
       return;
     }
+    const deleteTimeoutReference = decodedState.deleteTimeoutReference;
+    if (deleteTimeoutReference) {
+      deleteTimeoutReference.reference = null;
+    }
+    this.deleteTimeoutReference = deleteTimeoutReference;
     this.rebuildImplementation(decodedState);
+    this.initializeDeleteGameTimeout();
   }
 
   async saveState() {
@@ -125,6 +133,25 @@ export default abstract class BaseGameModel<
         error: e,
       });
     }
+  }
+
+  initializeDeleteGameTimeout(): boolean {
+    const deleteRef = this.deleteTimeoutReference;
+    if (!deleteRef) {
+      return false;
+    }
+    const secondsLeft = this.getSecondsLeftDeleteTimeoutReference();
+    switch (deleteRef.deleteGameType) {
+      case DeleteGameTypes.Disconnected:
+        this.scheduleDeleteDisconnected(secondsLeft);
+        break;
+      case DeleteGameTypes.PlayersLeft:
+        this.scheduleDeletePlayersLeft(secondsLeft);
+        break;
+      default:
+        return false;
+    }
+    return true;
   }
 
   getId(): string {
@@ -165,13 +192,13 @@ export default abstract class BaseGameModel<
     const playerIds = this.players.map((player) => player.id);
     const sockets = getSocketsByUserIds(playerIds);
     for (const socket of sockets) {
-      this.sendGameStatePayload(socket);
+      this.sendGameStatePayload(socket, this.createGameState(socket));
     }
   }
 
   sendGameStateToPlayer(socket: SocketServerSide) {
     this.saveState();
-    this.sendGameStatePayload(socket);
+    this.sendGameStatePayload(socket, this.createGameState(socket));
   }
 
   handleConnectionChange(
@@ -199,14 +226,14 @@ export default abstract class BaseGameModel<
       return;
     }
     const ref = this.deleteTimeoutReference;
-    if (!ref) {
+    if (!ref || ref.deleteGameType !== DeleteGameTypes.Disconnected) {
       return;
     }
     if (ref.reference) {
       clearInterval(ref.reference);
+      this.removeGameStateModifier(ref.deleteGameType);
     }
     this.deleteTimeoutReference = null;
-    this.gameToBeDeleted = null;
     this.sendGameState();
   }
 
@@ -216,55 +243,90 @@ export default abstract class BaseGameModel<
       this.sendGameState();
       return;
     }
-    this.scheduleDelete(
-      "Not all players are connected",
-      (playersDisconnected: string[], secondsLeft) => {
-        const playerNames = playersDisconnected.join(", ");
-        const playersDisconnectedMessage =
-          playersDisconnected.length > 1
-            ? `The following players are disconnected: (${playerNames})`
-            : `The following player is disconnected: (${playerNames})`;
-        return `${playersDisconnectedMessage}
-        
-        This game will be deleted in ${secondsLeft}`;
-      },
-      60
-    );
+    this.scheduleDeleteDisconnected();
+  }
+
+  creatDisconnectedInterruptingMessage(): InterruptingMessage {
+    const secondsLeft = this.getSecondsLeftDeleteTimeoutReference();
+    const playerNames = this.players
+      .filter((player) => !player.connected)
+      .map((player) => player.name)
+      .join(", ");
+    const disconnectedMessage =
+      playerNames.length > 1
+        ? `The following players are disconnected: (${playerNames})`
+        : `The following player is disconnected: (${playerNames})`;
+    const message = `${disconnectedMessage}
+
+      This game will be deleted in ${secondsLeft}`;
+    return {
+      title: "Not all players are connected",
+      message,
+    };
+  }
+
+  scheduleDeleteDisconnected(deleteAfterSeconds: number = 60) {
+    const func: GameStateModifier = (socket, gameData) => {
+      gameData.interruptingMessage =
+        this.creatDisconnectedInterruptingMessage();
+    };
+    this.scheduleDelete(DeleteGameTypes.Disconnected, func, deleteAfterSeconds);
+  }
+
+  getSecondsLeftDeleteTimeoutReference(): number {
+    const ref = this.deleteTimeoutReference;
+    if (!ref) {
+      return 0;
+    }
+    return ref.maxSeconds - ref.seconds;
+  }
+
+  creatPlayersLeftInterruptingMessage(): InterruptingMessage {
+    const secondsLeft = this.getSecondsLeftDeleteTimeoutReference();
+    const playerNames = this.players
+      .filter((player) => !player.connected)
+      .map((player) => player.name)
+      .join(", ");
+    const playerLabel = playerNames.length > 1 ? "Players have" : "Player has";
+    const leftPlayersMessage =
+      playerNames.length > 1
+        ? `The following players have left the game: (${playerNames})`
+        : `The following player has left the game: (${playerNames})`;
+    const message = `${leftPlayersMessage}
+    
+    This game will be deleted in ${secondsLeft}`;
+    return {
+      title: `${playerLabel} left the game`,
+      message,
+    };
+  }
+
+  scheduleDeletePlayersLeft(deleteAfterSeconds: number = 10) {
+    const func: GameStateModifier = (socket, gameData) => {
+      gameData.interruptingMessage = this.creatPlayersLeftInterruptingMessage();
+    };
+    this.scheduleDelete(DeleteGameTypes.PlayersLeft, func, deleteAfterSeconds);
   }
 
   scheduleDelete(
-    title: string,
-    message: (playersDisconnected: string[], secondsLeft: number) => string,
-    afterSeconds: number
+    type: DeleteGameTypes,
+    gameStateModifier: GameStateModifier,
+    deleteAfterSeconds: number
   ) {
-    if (this.deleteTimeoutReference) {
+    if (this.deleteTimeoutReference?.reference) {
       return;
     }
-    this.deleteTimeoutReference = {
-      seconds: 0,
-      maxSeconds: afterSeconds,
-      reference: null,
-    };
-
-    const sendScheduledDeleteMessage = () => {
-      const ref = this.deleteTimeoutReference;
-      if (!ref) {
-        return;
-      }
-      const secondsLeft = ref.maxSeconds - ref.seconds;
-      this.gameToBeDeleted = {
-        title,
-        message: message(
-          this.players
-            .filter((player) => !player.connected)
-            .map((player) => player.name),
-          secondsLeft
-        ),
+    if (!this.deleteTimeoutReference) {
+      this.deleteTimeoutReference = {
+        deleteGameType: type,
+        seconds: 0,
+        maxSeconds: deleteAfterSeconds,
+        reference: null,
       };
-      this.sendGameState();
-    };
+    }
 
-    sendScheduledDeleteMessage();
+    this.addGameStateModifier(type, gameStateModifier);
+    this.sendGameState();
     const interval = setInterval(() => {
       const ref = this.deleteTimeoutReference;
       if (!ref) {
@@ -272,13 +334,14 @@ export default abstract class BaseGameModel<
         return;
       }
       ref.seconds += 1;
-      sendScheduledDeleteMessage();
+      this.sendGameState();
       if (ref.seconds < ref.maxSeconds || !ref.reference) {
         return;
       }
       clearInterval(ref.reference);
       this.deleteTimeoutReference = null;
       this.destroy(true);
+      this.removeGameStateModifier(type);
     }, 1000);
     this.deleteTimeoutReference.reference = interval;
   }
@@ -289,20 +352,7 @@ export default abstract class BaseGameModel<
       return;
     }
     player.connected = false;
-    this.scheduleDelete(
-      `Players have left the game`,
-      (playersDisconnected: string[], secondsLeft: number) => {
-        const playerNames = playersDisconnected.join(", ");
-        const playersDisconnectedMessage =
-          playersDisconnected.length > 1
-            ? `The following players have left the game: (${playerNames})`
-            : `The following player has left the game: (${playerNames})`;
-        return `${playersDisconnectedMessage}
-        
-        This game will be deleted in ${secondsLeft}`;
-      },
-      10
-    );
+    this.scheduleDeletePlayersLeft();
   }
 
   getPlayer(playerId: string): PlayerModel | undefined {

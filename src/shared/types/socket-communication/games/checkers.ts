@@ -1,5 +1,4 @@
-import { GameToBeDeleted } from "@/server/games/base/BaseGameModel";
-import { GameDataInterface } from "@/server/games/checkers/CheckersGame";
+import { CheckersGameDataInterface } from "@/server/games/types";
 import { OriginTargetPayload } from "@/shared/types/socket-communication/games/game-types";
 import {
   GenericErrorResponseFunction,
@@ -25,11 +24,9 @@ export interface PhaseCheckersTypes {
   };
   ServerToClient: {
     [CheckersGameStateUpdateResponse]: ({
-      gameToBeDeleted,
       gameData,
     }: {
-      gameToBeDeleted: GameToBeDeleted;
-      gameData: GameDataInterface;
+      gameData: CheckersGameDataInterface;
     }) => void;
     [GenericResponseError]: GenericErrorResponseFunction;
   };

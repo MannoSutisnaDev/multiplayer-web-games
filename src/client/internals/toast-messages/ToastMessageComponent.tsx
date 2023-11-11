@@ -50,7 +50,7 @@ export default function ToastMessageComponent({
       };
       exitAnimation();
     }
-  }, [isPresent, scope]);
+  }, [animate, isPresent, safeToRemove, scope]);
 
   useEffect(() => {
     let timeout: NodeJS.Timeout | null = null;
