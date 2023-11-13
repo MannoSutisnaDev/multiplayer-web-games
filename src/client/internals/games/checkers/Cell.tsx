@@ -1,7 +1,10 @@
 "use client";
 
-import { SelectedPiece } from "@/client/internals/games/checkers/types";
+import { useContext, useEffect, useRef, useState } from "react";
+
+import { GlobalContextWrapper } from "@/client/internals/global/GlobalContext";
 import { socket } from "@/client/internals/socket/socket";
+import { convertToGamePositionKey } from "@/client/utils";
 import { MoveMode } from "@/shared/types/socket-communication/games/game-types";
 
 interface CellProps {
@@ -9,13 +12,7 @@ interface CellProps {
   row: number;
   column: number;
   playerIndex?: number;
-  setSelectedPiece: (pieceToSelect: SelectedPiece | null) => void;
   moveMode: MoveMode | null;
-  selectedPiece: {
-    row: number;
-    column: number;
-    playerIndex: number;
-  } | null;
 }
 
 export default function Cell({
@@ -24,9 +21,31 @@ export default function Cell({
   column,
   playerIndex,
   moveMode,
-  setSelectedPiece,
-  selectedPiece,
 }: CellProps) {
+  const {
+    isDragging,
+    setIsDragging,
+    gamePositionsRef,
+    calculateAreasData,
+    selectedPieceRef,
+  } = useContext(GlobalContextWrapper);
+  const cellRef = useRef<HTMLDivElement>(null);
+  const pieceRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!cellRef.current || !gamePositionsRef?.current) {
+      return;
+    }
+    gamePositionsRef.current.set(
+      convertToGamePositionKey({
+        column,
+        row,
+      }),
+      cellRef.current
+    );
+    calculateAreasData();
+  }, [column, row, gamePositionsRef, calculateAreasData]);
+
   let color = "";
   if (row % 2 === 0) {
     color = index % 2 === 0 ? "white" : "black";
@@ -39,12 +58,21 @@ export default function Cell({
     const typeClass = moveMode === MoveMode.KING ? "king" : "regular";
     piece = (
       <div
-        className={`piece ${pieceColor} ${typeClass}`}
-        onDragStart={() => {
-          setSelectedPiece({ row, column, playerIndex });
+        className={`piece ${pieceColor} ${typeClass} ${
+          !isDragging ? "draggable" : "dragging"
+        }`}
+        ref={pieceRef}
+        onMouseDown={(e) => {
+          e.preventDefault();
+          if (isDragging || !selectedPieceRef || !pieceRef.current) {
+            return false;
+          }
+          setIsDragging(true);
+          selectedPieceRef.current = {
+            selectedPiece: { row, column, playerIndex },
+            element: pieceRef.current,
+          };
         }}
-        onDragEnd={() => {}}
-        draggable
       >
         {typeClass === "king" ? "K" : ""}
       </div>
@@ -54,25 +82,26 @@ export default function Cell({
   return (
     <div
       className={`cell ${color}`}
-      onDragOver={(e) => {
-        e.preventDefault();
-      }}
-      onDrop={(e) => {
-        if (!selectedPiece) {
-          return;
-        }
-        socket.emit("MovePiece", {
-          origin: {
-            row: selectedPiece.row,
-            column: selectedPiece.column,
-          },
-          target: {
-            row,
-            column,
-          },
-        });
-        setSelectedPiece(null);
-      }}
+      ref={cellRef}
+      // onDragOver={(e) => {
+      //   e.preventDefault();
+      // }}
+      // onDrop={(e) => {
+      //   if (!selectedPiece) {
+      //     return;
+      //   }
+      //   socket.emit("MovePiece", {
+      //     origin: {
+      //       row: selectedPiece.row,
+      //       column: selectedPiece.column,
+      //     },
+      //     target: {
+      //       row,
+      //       column,
+      //     },
+      //   });
+      //   setSelectedPiece(null);
+      // }}
     >
       {piece}
     </div>

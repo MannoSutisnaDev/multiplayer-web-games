@@ -64,3 +64,7 @@ export interface PlayerPayload {
   userID: string;
   username: string;
 }
+
+export const COLUMNS = 8;
+export const ROWS = 8;
+export const PLAYER_PIECES = 12;

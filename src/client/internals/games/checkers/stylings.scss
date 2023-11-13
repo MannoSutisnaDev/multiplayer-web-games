@@ -1,3 +1,9 @@
+body {
+  &.dragging {
+    cursor: grabbing;
+  }
+}
+
 .main-wrapper {
   position: relative;
   .leave-button {
@@ -24,6 +30,7 @@
 }
 
 .cell {
+  position: relative;
   width: 70px;
   height: 70px;
   display: flex;
@@ -45,14 +52,35 @@
   display: inline-flex;
   justify-content: center;
   align-items: center;
-  cursor: grab;
+  z-index: 10000;
   &.red {
     background: red;
   }
   &.white {
     background: brown;
   }
+  &.draggable {
+    cursor: grab;
+  }
+  &.dragging {
+    cursor: grabbing;
+  }
 }
+
+.ghost-element {
+  visibility: hidden;
+  opacity: 0;
+}
+
+// .grabbing {
+//   cursor: url("https://www.google.com/intl/en_ALL/mapfiles/closedhand.cur"),
+//     all-scroll;
+//   cursor: -webkit-grabbing;
+//   cursor: -moz-grabbing;
+//   cursor: -o-grabbing;
+//   cursor: -ms-grabbing;
+//   cursor: grabbing;
+// }
 
 .game-container {
   display: flex;

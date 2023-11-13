@@ -1,9 +1,6 @@
 "use client";
 
-import { useState } from "react";
-
 import Cell from "@/client/internals/games/checkers/Cell";
-import { SelectedPiece } from "@/client/internals/games/checkers/types";
 import { CheckersGameDataInterface } from "@/server/games/types";
 
 interface Props {
@@ -11,9 +8,6 @@ interface Props {
 }
 
 export default function Board({ gameData }: Props) {
-  const [selectedPiece, setSelectedPiece] = useState<SelectedPiece | null>(
-    null
-  );
   const rowCollection: Array<Array<JSX.Element>> = [];
   for (const cells of gameData?.cells ?? []) {
     const columnCollection: Array<JSX.Element> = [];
@@ -26,10 +20,6 @@ export default function Board({ gameData }: Props) {
           column={cell.column}
           playerIndex={cell?.playerPiece?.playerIndex}
           moveMode={cell.playerPiece?.moveMode ?? null}
-          selectedPiece={selectedPiece}
-          setSelectedPiece={(pieceToSelect: SelectedPiece | null) => {
-            setSelectedPiece(pieceToSelect);
-          }}
         />
       );
     }

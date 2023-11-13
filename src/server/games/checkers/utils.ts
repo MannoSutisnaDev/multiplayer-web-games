@@ -41,6 +41,7 @@ export const validateMove = (
   const targetCell = cellCollection[origin.row][origin.column];
   if (!targetCell.playerPiece) {
     return {
+      error: "Invalid piece",
       valid: false,
       removePieces,
     };

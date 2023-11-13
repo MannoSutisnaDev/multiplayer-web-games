@@ -168,3 +168,10 @@ https://code.lol/post/programming/higher-kinded-types/ (HKT)
 - schedule game delete refactor afmaken
 - maken dat in de sendGameState functie de payload aangepast kan worden per socket
 - interruptingMessage property weghalen van het Game object, aangeven in de type return van de SendGameStatePayload functie dat er een interrupting message in kan zitten
+
+2023-11-12
+
+- grabbable / grabbed cursor fixen
+  - steen mee laten bewegen (position absolute en coördinaten aanpassen)
+- create lobby lag bug fixen
+- deployen

@@ -20,7 +20,6 @@ export default function Checkers() {
       addErrorMessage?.(error);
     });
     socket.on("CheckersGameStateUpdateResponse", ({ gameData }) => {
-      console.log({ gameData });
       setGameData(gameData);
     });
 

@@ -21,16 +21,15 @@ import { SocketServerSide } from "@/server/types";
 import {
   Cell,
   CellCollection,
+  COLUMNS,
   MoveMode,
   OriginTargetPayload,
   Piece as PieceInterface,
   PiecesDirection,
   PlayableCells,
+  PLAYER_PIECES,
+  ROWS,
 } from "@/shared/types/socket-communication/games/game-types";
-
-const COLUMNS = 8;
-const ROWS = 8;
-const PLAYER_PIECES = 12;
 
 export default class CheckersGame extends BaseGameModel<
   CheckersGameInterface,
@@ -271,7 +270,7 @@ export default class CheckersGame extends BaseGameModel<
         cell.playerPiece
       );
     } catch (e) {
-      if (e instanceof Error) {
+      if (e instanceof Error && e.message) {
         socket.emit("GenericResponseError", {
           error: e.message,
         });
