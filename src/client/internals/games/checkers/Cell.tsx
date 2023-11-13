@@ -1,9 +1,8 @@
 "use client";
 
-import { useContext, useEffect, useRef, useState } from "react";
+import { useContext, useEffect, useRef } from "react";
 
-import { GlobalContextWrapper } from "@/client/internals/global/GlobalContext";
-import { socket } from "@/client/internals/socket/socket";
+import { CheckersContextWrapper } from "@/client/internals/games/checkers/Checkers";
 import { convertToGamePositionKey } from "@/client/utils";
 import { MoveMode } from "@/shared/types/socket-communication/games/game-types";
 
@@ -24,11 +23,14 @@ export default function Cell({
 }: CellProps) {
   const {
     isDragging,
-    setIsDragging,
+    selectedPieceRef,
+    selectedPiece,
+    setSelectedPiece,
     gamePositionsRef,
     calculateAreasData,
-    selectedPieceRef,
-  } = useContext(GlobalContextWrapper);
+    gameData,
+    timestamp,
+  } = useContext(CheckersContextWrapper);
   const cellRef = useRef<HTMLDivElement>(null);
   const pieceRef = useRef<HTMLDivElement>(null);
 
@@ -53,25 +55,52 @@ export default function Cell({
     color = index % 2 == 0 ? "black" : "white";
   }
   let piece: null | JSX.Element = null;
+  const notAllowed =
+    !gameData ||
+    gameData.currentPlayerIndex !== gameData.selfPlayerIndex ||
+    playerIndex !== gameData.currentPlayerIndex;
+
   if (typeof playerIndex === "number") {
     const pieceColor = playerIndex === 0 ? "red" : "white";
     const typeClass = moveMode === MoveMode.KING ? "king" : "regular";
+    let iconClass = "";
+    if (notAllowed) {
+      iconClass = "blocked";
+    } else {
+      iconClass = !isDragging ? "draggable" : "dragging";
+    }
+    let selectedClass = "";
+    if (selectedPiece) {
+      selectedClass =
+        convertToGamePositionKey({ row, column }) ===
+        convertToGamePositionKey({
+          row: selectedPiece.selectedPiece.row,
+          column: selectedPiece.selectedPiece.column,
+        })
+          ? "selected"
+          : "";
+    }
     piece = (
       <div
-        className={`piece ${pieceColor} ${typeClass} ${
-          !isDragging ? "draggable" : "dragging"
-        }`}
+        key={`piece-${timestamp}`}
+        className={`piece ${pieceColor} ${typeClass} ${iconClass} ${selectedClass}`}
         ref={pieceRef}
         onMouseDown={(e) => {
           e.preventDefault();
-          if (isDragging || !selectedPieceRef || !pieceRef.current) {
-            return false;
+          if (
+            isDragging ||
+            !selectedPieceRef ||
+            !pieceRef.current ||
+            notAllowed ||
+            selectedPieceRef.current?.dropped
+          ) {
+            return;
           }
-          setIsDragging(true);
-          selectedPieceRef.current = {
+          setSelectedPiece({
             selectedPiece: { row, column, playerIndex },
+            dropped: false,
             element: pieceRef.current,
-          };
+          });
         }}
       >
         {typeClass === "king" ? "K" : ""}
@@ -80,29 +109,7 @@ export default function Cell({
   }
 
   return (
-    <div
-      className={`cell ${color}`}
-      ref={cellRef}
-      // onDragOver={(e) => {
-      //   e.preventDefault();
-      // }}
-      // onDrop={(e) => {
-      //   if (!selectedPiece) {
-      //     return;
-      //   }
-      //   socket.emit("MovePiece", {
-      //     origin: {
-      //       row: selectedPiece.row,
-      //       column: selectedPiece.column,
-      //     },
-      //     target: {
-      //       row,
-      //       column,
-      //     },
-      //   });
-      //   setSelectedPiece(null);
-      // }}
-    >
+    <div key={`cell-${timestamp}`} className={`cell ${color}`} ref={cellRef}>
       {piece}
     </div>
   );

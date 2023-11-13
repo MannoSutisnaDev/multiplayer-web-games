@@ -61,9 +61,18 @@ body {
   }
   &.draggable {
     cursor: grab;
+    &.selected {
+      opacity: 0.5;
+    }
   }
   &.dragging {
     cursor: grabbing;
+    &.selected {
+      opacity: 0.5;
+    }
+  }
+  &.blocked {
+    cursor: not-allowed;
   }
 }
 
@@ -71,16 +80,6 @@ body {
   visibility: hidden;
   opacity: 0;
 }
-
-// .grabbing {
-//   cursor: url("https://www.google.com/intl/en_ALL/mapfiles/closedhand.cur"),
-//     all-scroll;
-//   cursor: -webkit-grabbing;
-//   cursor: -moz-grabbing;
-//   cursor: -o-grabbing;
-//   cursor: -ms-grabbing;
-//   cursor: grabbing;
-// }
 
 .game-container {
   display: flex;

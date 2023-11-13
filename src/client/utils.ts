@@ -48,16 +48,16 @@ export function convertToGamePosition(gamePositionKey: string) {
 }
 
 export const getClientXAndY = (
-  evt: React.SyntheticEvent
+  evt: Event
 ): { clientX: number; clientY: number } => {
   let clientY: number;
   let clientX: number;
-  if (evt.nativeEvent instanceof TouchEvent) {
-    clientY = evt.nativeEvent.touches[0].clientY;
-    clientX = evt.nativeEvent.touches[0].clientX;
-  } else if (evt.nativeEvent instanceof MouseEvent) {
-    clientY = evt.nativeEvent.clientY;
-    clientX = evt.nativeEvent.clientX;
+  if (evt instanceof TouchEvent) {
+    clientY = evt.touches[0].clientY;
+    clientX = evt.touches[0].clientX;
+  } else if (evt instanceof MouseEvent) {
+    clientY = evt.clientY;
+    clientX = evt.clientX;
   } else {
     throw new Error("Invalid event to fetch client X and Y");
   }

@@ -2,7 +2,7 @@ import "@/client/styling/main.scss";
 
 import type { Metadata } from "next";
 
-import GlobalContext from "@/client/internals/global/GlobalContext";
+import BodyContext from "@/client/internals/body/BodyContext";
 import RouteGuard from "@/client/internals/route-guard/RouteGuard";
 import SocketContext from "@/client/internals/socket/SocketContext";
 import ToastMessageContext from "@/client/internals/toast-messages/ToastMessageContext";
@@ -18,13 +18,13 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <GlobalContext>
+      <BodyContext>
         <ToastMessageContext>
           <SocketContext>
             <RouteGuard>{children}</RouteGuard>
           </SocketContext>
         </ToastMessageContext>
-      </GlobalContext>
+      </BodyContext>
     </html>
   );
 }
