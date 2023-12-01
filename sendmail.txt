@@ -1,0 +1,30 @@
+const nodemailer = require("nodemailer");
+
+const transporter = nodemailer.createTransport({
+  service: "postfix",
+  host: "localhost",
+  secure: false,
+  port: 25,
+  auth: {
+    user: "no-replay@mannosutisnadev.com",
+    pass: "hoefjeniet",
+  },
+  tls: {
+    rejectUnauthorized: false,
+  },
+});
+
+const mailOptions = {
+  from: "no-reply@mannosutisnadev.com",
+  to: "mannosutisnahiras@gmail.com",
+  subject: "Sending Email using Node.js",
+  text: "That was easy!",
+};
+
+transporter.sendMail(mailOptions, function (error, info) {
+  if (error) {
+    console.log(error);
+  } else {
+    console.log("Email sent: " + info.response);
+  }
+});

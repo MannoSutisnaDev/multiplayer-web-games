@@ -1,0 +1,19 @@
+Create user:
+https://linuxize.com/post/how-to-create-users-in-linux-using-the-useradd-command/
+
+Remove user
+https://linuxize.com/post/how-to-delete-users-in-linux-using-the-userdel-command/
+
+Remove user from group
+https://www.tecmint.com/add-or-remove-user-from-group-in-linux/
+
+Login as other user:
+https://raspberrytips.com/login-as-another-user-in-linux/
+sudo -i -u <USER>
+
+monitor log file: 
+tail -f /var/log/mail.log
+
+
+Change ownership
+chown -R root:applications /var/www/games

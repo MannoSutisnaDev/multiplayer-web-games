@@ -175,3 +175,77 @@ https://code.lol/post/programming/higher-kinded-types/ (HKT)
   - steen mee laten bewegen (position absolute en coördinaten aanpassen)
 - create lobby lag bug fixen
 - deployen
+
+
+- implement email
+https://hpanel.hostinger.com/email-onboarding/16BeWETxDBdXF4Cke/dns
+https://support.hostinger.com/en/articles/4456413-what-are-the-dkim-records-for-hostinger-email
+https://medium.com/yavar/send-mail-using-postfix-server-bbb08331d39d
+
+How to configure SMTP Server on Linux | VPS Tutorial
+https://www.youtube.com/watch?v=Tq7q_pttrDw
+
+https://www.hostinger.com/tutorials/how-to-install-and-setup-mail-server-on-ubuntu/
+
+
+
+Delete certbot SSL certificate:
+https://gist.github.com/zoharbabin/01d1d95358d4b1c0e0b078824ddb930a
+
+Connect email to digital ocean droplet:
+https://bobcares.com/blog/connect-email-to-digitalocean-droplet/
+
+Hostinger SMTP info:
+https://support.hostinger.com/en/articles/4305847-set-up-hostinger-email-on-your-applications-and-devices
+
+
+Previous hostname settings:
+- nextjs-ubuntu (/etc/hostname)
+- 127.0.1.1 nextjs-ubuntu nextjs-ubuntu (/etc/hosts)
+
+Run database migrations in production:
+npx prisma migrate deploy
+
+
+Send mail to test
+
+Host sub domain
+
+
+
+Store auth token in cookie / sessionstorage / localstorage
+If cookie is enabled redirect to certain pages based on settings
+Login with form
+Send verification email
+Reserve name if login with account
+Implement JSON web token
+
+Create settings page
+  - Change name
+  - Check stats
+Spectator mode
+Replay game mode
+Check stats
+Make the following functionalities generic so it can be reused for chess, liegen, etc
+Create categories when choosing a game
+
+Create chess
+Create liegen
+Make all games responsive (playable on mobile and tablet)
+
+Profanity filter
+XSS filter
+
+Make a chat functionality
+  - DM
+  - Lobby chat
+    - Pre game
+    - In game
+Notifications
+  - Invite
+  - DM message
+
+Create other games
+
+
+
