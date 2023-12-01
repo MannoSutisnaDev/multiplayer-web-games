@@ -7,10 +7,13 @@
   },
   "scripts": {
     "dev": "nodemon - exec 'ts-node' src/server/index.ts",
-    "build": "next build",
-    "start": "NODE_ENV=production ts-node src/server/index.ts",
+    "start:old": "NODE_ENV=production ts-node src/server/index.ts",
     "lint": "next lint",
-    "typescript-check": "tsc"
+    "typescript-check": "tsc",
+    "build:server": "tsc --project tsconfig.server.json",
+    "build:next": "next build",
+    "build": "npm run build:next && npm run build:server",
+    "start": "NODE_ENV=production node dist/server/index.js"
   },
   "dependencies": {
     "@prisma/client": "^5.5.2",
