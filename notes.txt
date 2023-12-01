@@ -199,6 +199,11 @@ Hostinger SMTP info:
 https://support.hostinger.com/en/articles/4305847-set-up-hostinger-email-on-your-applications-and-devices
 
 
+Deploy to production:
+https://stackoverflow.com/questions/67809981/how-to-build-next-js-app-with-custom-server-for-production-in-typescript
+
+
+
 Previous hostname settings:
 - nextjs-ubuntu (/etc/hostname)
 - 127.0.1.1 nextjs-ubuntu nextjs-ubuntu (/etc/hosts)

@@ -10,10 +10,10 @@
     "start:old": "NODE_ENV=production ts-node src/server/index.ts",
     "lint": "next lint",
     "typescript-check": "tsc",
-    "build:server": "tsc --project tsconfig.server.json",
+    "build:server": "tsc --project tsconfig.server.json && tsc-alias -p tsconfig.server.json",
     "build:next": "next build",
     "build": "npm run build:next && npm run build:server",
-    "start": "NODE_ENV=production node dist/server/index.js"
+    "start": "node dist/src/server/index.js"
   },
   "dependencies": {
     "@prisma/client": "^5.5.2",
@@ -39,6 +39,7 @@
     "prettier": "3.0.3",
     "prisma": "^5.5.2",
     "sass": "^1.69.5",
+    "tsc-alias": "^1.8.8",
     "tsconfig-paths": "^4.2.0",
     "typescript": "^5"
   }
