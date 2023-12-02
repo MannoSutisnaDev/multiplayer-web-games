@@ -202,6 +202,22 @@ https://support.hostinger.com/en/articles/4305847-set-up-hostinger-email-on-your
 Deploy to production:
 https://stackoverflow.com/questions/67809981/how-to-build-next-js-app-with-custom-server-for-production-in-typescript
 
+Check ports running:
+https://www.cyberciti.biz/faq/unix-linux-check-if-port-is-in-use-command/
+
+
+sudo lsof -i -P -n | grep LISTEN
+
+
+
+- online gaming site werkend krijgen zonder chmod 777 te doen op alle directories
+- port 3001 gebruiken zonder code aan te passen
+- mail versturen vanaf sub domein vanuit de code
+- pre builden van pages toch op een of andere manier werkend zien te krijgen (voor custom server)
+
+
+
+
 
 
 Previous hostname settings:
