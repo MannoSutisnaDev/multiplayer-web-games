@@ -33,7 +33,7 @@ nextApp.prepare().then(async () => {
   });
 
   app.all("*", async (req: Request, res: Response) => {
-    await routeGuard(req);
+    // await routeGuard(req);
     return nextHandler(
       req as unknown as NextApiRequest,
       res as unknown as NextApiResponse
