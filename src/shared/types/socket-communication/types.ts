@@ -69,3 +69,9 @@ const lobbyWithGameTypeAndUsers = Prisma.validator<Prisma.LobbyDefaultArgs>()({
 export type LobbyWithGameTypeAndUsers = Prisma.LobbyGetPayload<
   typeof lobbyWithGameTypeAndUsers
 >;
+
+export enum TokenStorage {
+  LocalStorage = "LocalStorage",
+  SessionStorage = "SessionStorage",
+  Cookie = "Cookie",
+}

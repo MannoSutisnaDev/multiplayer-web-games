@@ -6,6 +6,7 @@ import { useContext, useEffect, useState } from "react";
 import { socket } from "@/client/internals/socket/socket";
 import { SocketContextWrapper } from "@/client/internals/socket/SocketContext";
 import { ToastMessageContextWrapper } from "@/client/internals/toast-messages/ToastMessageContext";
+import { tokenStorage } from "@/client/utils";
 
 export default function Home() {
   const router = useRouter();
@@ -21,7 +22,7 @@ export default function Home() {
       if (!sessionId) {
         return;
       }
-      sessionStorage.setItem("sessionId", sessionId);
+      tokenStorage().setToken(sessionId);
       setSessionId(sessionId);
       setUsernameContext(username);
     });

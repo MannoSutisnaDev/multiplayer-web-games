@@ -228,6 +228,9 @@ Previous hostname settings:
 Run database migrations in production:
 npx prisma migrate deploy
 
+does not contain starts with /lobbies/ and does not contain .js at the end:
+/^\/lobbies\/((?!.js).)*$/gm
+
 
 Send mail to test
 

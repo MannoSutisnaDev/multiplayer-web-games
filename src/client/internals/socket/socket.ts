@@ -3,11 +3,12 @@
 import { io } from "socket.io-client";
 
 import { SocketClientSide } from "@/client/types";
+import { tokenStorage } from "@/client/utils";
 
 const socket = io({ autoConnect: false }) as SocketClientSide;
 
 const establishSocketConnection = () => {
-  const sessionId = sessionStorage.getItem("sessionId");
+  const sessionId = tokenStorage().getToken();
   if (!sessionId) {
     socket.connect();
     return;

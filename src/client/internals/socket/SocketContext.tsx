@@ -14,6 +14,7 @@ import {
   establishSocketConnection,
   socket,
 } from "@/client/internals/socket/socket";
+import { tokenStorage } from "@/client/utils";
 import { GameTypes } from "@/shared/types/socket-communication/general";
 
 interface SocketContextWrapperInterface {
@@ -66,7 +67,7 @@ export default function SocketContext({ children }: PropsWithChildren) {
       }
     );
     socket.on("DeleteSessionId", () => {
-      sessionStorage.removeItem("sessionId");
+      tokenStorage().removeToken();
       setUsername("");
       setSessionId("");
       setLobbyId("");

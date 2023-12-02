@@ -152,6 +152,7 @@ cd games
 git clone git@github.com:MannoSutisnaDev/multiplayer-web-games.git ./
 npm install
 npx prisma migrate deploy
+npx prisma db seed
 npm run build
 touch .env.local
 vim .env.local

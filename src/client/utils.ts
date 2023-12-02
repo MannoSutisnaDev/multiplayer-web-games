@@ -1,5 +1,6 @@
 import { QuadrilateralInterface } from "@/client/types";
 import { GamePosition } from "@/shared/types/socket-communication/games/game-types";
+import { TokenStorage } from "@/shared/types/socket-communication/types";
 
 export function quadrilateralOverlapPercentage(
   quad1: QuadrilateralInterface,
@@ -66,3 +67,74 @@ export const getClientXAndY = (
     clientY,
   };
 };
+
+export const tokenStorage = () => {
+  const tokenStorage = process.env.NEXT_PUBLIC_TOKEN_STORAGE as TokenStorage;
+  const getToken = (): string => {
+    switch (tokenStorage) {
+      case TokenStorage.SessionStorage:
+        return sessionStorage.getItem("sessionId") as string;
+      case TokenStorage.LocalStorage:
+        return localStorage.getItem("sessionId") as string;
+      case TokenStorage.Cookie:
+        return getCookie("sessionId");
+    }
+  };
+
+  const setToken = (sessionId: string) => {
+    switch (tokenStorage) {
+      case TokenStorage.SessionStorage:
+        sessionStorage.setItem("sessionId", sessionId);
+        break;
+      case TokenStorage.LocalStorage:
+        localStorage.setItem("sessionId", sessionId);
+        break;
+      case TokenStorage.Cookie:
+        setCookie("sessionId", sessionId);
+        break;
+    }
+  };
+
+  const removeToken = () => {
+    switch (tokenStorage) {
+      case TokenStorage.SessionStorage:
+        sessionStorage.removeItem("sessionId");
+        break;
+      case TokenStorage.LocalStorage:
+        localStorage.removeItem("sessionId");
+        break;
+      case TokenStorage.Cookie:
+        document.cookie =
+          "sessionId=; expires=Thu, 01 Jan 1970 00:00:00 UTC;path=/;";
+        break;
+    }
+  };
+  return {
+    getToken,
+    setToken,
+    removeToken,
+  };
+};
+
+function setCookie(cname: string, cvalue: string, exdays: number = 1000) {
+  const d = new Date();
+  d.setTime(d.getTime() + exdays * 24 * 60 * 60 * 1000);
+  let expires = "expires=" + d.toUTCString();
+  document.cookie = cname + "=" + cvalue + ";" + expires + ";path=/";
+}
+
+function getCookie(cname: string) {
+  let name = cname + "=";
+  let decodedCookie = decodeURIComponent(document.cookie);
+  let ca = decodedCookie.split(";");
+  for (let i = 0; i < ca.length; i++) {
+    let c = ca[i];
+    while (c.charAt(0) == " ") {
+      c = c.substring(1);
+    }
+    if (c.indexOf(name) == 0) {
+      return c.substring(name.length, c.length);
+    }
+  }
+  return "";
+}
