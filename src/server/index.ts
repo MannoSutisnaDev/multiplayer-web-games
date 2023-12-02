@@ -10,9 +10,9 @@ import {
 import { SocketServerSide } from "@/server/types";
 import { Disconnect } from "@/shared/types/socket-communication/lobby/general";
 
-const port: number = parseInt(process.env.PORT || "3000", 10);
-const dev: boolean = process.env.NODE_ENV !== "production";
-const nextApp = next({ dev });
+const port = parseInt(process.env.PORT || "3000", 10);
+const dev: boolean = process.env.MODE !== "production";
+const nextApp = next({ dev, hostname: "localhost", port });
 const nextHandler: NextApiHandler = nextApp.getRequestHandler();
 
 import { rebuildGames as rebuildCheckerGames } from "@/server/games/checkers/CheckersRepository";
