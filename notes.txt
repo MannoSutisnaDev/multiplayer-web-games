@@ -192,8 +192,9 @@ https://www.hostinger.com/tutorials/how-to-install-and-setup-mail-server-on-ubun
 Delete certbot SSL certificate:
 https://gist.github.com/zoharbabin/01d1d95358d4b1c0e0b078824ddb930a
 
-Connect email to digital ocean droplet:
+To install mail use the following:
 https://bobcares.com/blog/connect-email-to-digitalocean-droplet/
+https://www.hostinger.com/tutorials/how-to-install-and-setup-mail-server-on-ubuntu/
 
 Hostinger SMTP info:
 https://support.hostinger.com/en/articles/4305847-set-up-hostinger-email-on-your-applications-and-devices

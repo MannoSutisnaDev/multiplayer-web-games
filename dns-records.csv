@@ -1,0 +1,14 @@
+type,hostname,value,ttl
+A,@,142.93.131.181,3600
+A,@,142.93.131.181,3600
+CNAME,autodiscover.mannosutisnadev.com,autodiscover.mail.hostinger.com,300
+CNAME,autoconfig.mannosutisnadev.com,autoconfig.mail.hostinger.com,300
+CNAME,hostingermail-c._domainkey.mannosutisnadev.com,hostingermail-c.dkim.mail.hostinger.com,300
+CNAME,hostingermail-b._domainkey.mannosutisnadev.com,hostingermail-b.dkim.mail.hostinger.com,300
+CNAME,hostingermail-a._domainkey.mannosutisnadev.com,hostingermail-a.dkim.mail.hostinger.com,300
+TXT,@,v=spf1 include:_spf.mail.hostinger.com ~all,300
+MX,@,mx2.hostinger.com,14400
+MX,@,mx1.hostinger.com,14400
+NS,@,ns1.digitalocean.com,1800
+NS,@,ns2.digitalocean.com,1800
+NS,@,ns3.digitalocean.com,1800

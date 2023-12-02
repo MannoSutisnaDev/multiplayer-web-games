@@ -1,0 +1,205 @@
+Before we start make sure the correct records are added to the DNS zone of mannosutisnadev.com
+Check dns-records.csv to see what needs to be added
+
+
+
+sudo apt-get install tmux
+cd ~
+touch .vimrc
+vim .vimrc
+add to file: colorscheme delek
+
+Setup Mail Server --
+sudo vim /etc/hostname
+set: mannosutisnadev.com
+
+sudo vim /etc/hosts
+set: 127.0.1.1 mannosutisnadev.com
+reboot
+
+sudo apt install mailutils
+tab -> enter (default settings)
+
+sudo useradd -m no-reply
+sudo passwd no-reply
+usermod --shell /bin/bash no-reply
+
+vim /etc/postfix/main.cf
+
+edit the follwoing:
+inet_interfaces = loopback only
+smtpd_tls_security_level=encrypt
+
+comment out: 
+smtp_tls_security_level=may
+relayhost = 
+
+add the following:
+smtp_sasl_auth_enable = yes
+smtp_sasl_password_maps = hash:/etc/postfix/sasl_passwd
+smtp_sasl_security_options = noanonymous
+smtp_sasl_tls_security_options = noanonymous
+smtp_tls_security_level = encrypt
+smtp_tls_wrappermode = yes
+header_size_limit = 4096000
+relayhost = [smtp.hostinger.com]:465
+
+touch /etc/postfix/sasl_passwd
+vim /etc/postfix/sasl_passwd
+
+add to file:
+[smtp.hostinger.com]:465 ${username}:${password}
+
+sudo chmod 600 /etc/postfix/sasl_passwd
+sudo postmap /etc/postfix/sasl_passwd
+sudo systemctl restart postfix
+
+Send mail to test if configuration is correct:
+sudo -i -u no-reply
+echo “hello world” | sendmail mannosutisnahiras@gmail.com
+tail -f /var/log/mail.log
+
+
+
+Create user and login to user
+sudo useradd -m applications
+sudo passwd applications
+usermod --shell /bin/bash applications
+
+sudo -i -u applications
+cd ~
+touch .vimrc
+vim .vimrc
+add to file: colorscheme delek
+ssh-keygen -t ed25519 -C "mannosutisnahiras@gmail.com"
+cat ~/.ssh/id_ed25519.pub
+copy contents and register public key in github
+
+exit
+sudo apt update && sudo apt upgrade
+sudo apt install nginx certbot python3-certbot-nginx
+sudo ufw allow "Nginx Full"
+ufw allow OpenSSH
+ufw enable
+apt install npm
+npm install -g pm2
+chown -R root:applications /var/www/games
+chmod -R 775 /var/www
+
+sudo -i -u applications
+cd /var/www
+curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.1/install.sh | bash
+exec $SHELL
+nvm install --lts
+mkdir portfolio
+cd portfolio
+git clone git@github.com:MannoSutisnaDev/portfolio-website.git ./
+npm install
+npm run build
+
+exit
+cd /etc/nginx/sites-available
+touch portfolio
+vim portfolio
+
+copy contents into file:
+server {
+        listen 80;
+        server_name mannosutisnadev.com;
+
+        gzip on;
+        gzip_proxied any;
+        gzip_types application/javascript application/x-javascript text/css text/javascript;
+        gzip_comp_level 5;
+        gzip_buffers 16 8k;
+        gzip_min_length 256;
+
+        location /_next/static/ {
+                alias /var/www/portfolio/.next/static/;
+                expires 365d;
+                access_log off;
+        }
+
+        location / {
+                proxy_pass http://127.0.0.1:3000;
+                proxy_http_version 1.1;
+                proxy_set_header Upgrade $http_upgrade;
+                proxy_set_header Connection 'upgrade';
+                proxy_set_header Host $host;
+                proxy_cache_bypass $http_upgrade;
+        }
+}
+
+sudo ln -s /etc/nginx/sites-available/portfolio /etc/nginx/sites-enabled/portfolio
+nginx -t (check if nginx settings are correct)
+
+cd /etc/nginx/sites-available
+rm default
+cd /etc/nginx/sites-enabled
+rm default
+systemctl restart nginx
+sudo certbot --nginx -d mannosutisnadev.com
+mannosutisnahiras@gmail.com
+
+sudo -i -u applications
+cd /var/www/portfolio
+pm2 start npm --name portfolio -- start
+
+
+cd /var/www 
+mkdir games
+cd games
+git clone git@github.com:MannoSutisnaDev/multiplayer-web-games.git ./
+npm install
+npx prisma migrate deploy
+npm run build
+touch .env.local
+vim .env.local
+
+copy contents into file:
+PORT=3001
+MODE="production"
+
+
+exit
+cd /etc/nginx/sites-available
+touch games
+vim games
+
+copy contents into file:
+server {
+        listen 80;
+        server_name games.mannosutisnadev.com;
+
+        gzip on;
+        gzip_proxied any;
+        gzip_types application/javascript application/x-javascript text/css text/javascript;
+        gzip_comp_level 5;
+        gzip_buffers 16 8k;
+        gzip_min_length 256;
+
+        location /_next/static/ {
+                alias /var/www/games/.next/static/;
+                expires 365d;
+                access_log off;
+        }
+
+        location / {
+                proxy_pass http://127.0.0.1:3001;
+                proxy_http_version 1.1;
+                proxy_set_header Upgrade $http_upgrade;
+                proxy_set_header Connection 'upgrade';
+                proxy_set_header Host $host;
+                proxy_cache_bypass $http_upgrade;
+        }
+}
+
+sudo ln -s /etc/nginx/sites-available/games /etc/nginx/sites-enabled/games
+nginx -t (check if nginx settings are correct)
+systemctl restart nginx
+sudo certbot --nginx -d games.mannosutisnadev.com
+
+sudo -i -u applications
+cd /var/www/games
+pm2 start npm --name games -- start
+
