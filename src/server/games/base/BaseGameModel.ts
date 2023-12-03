@@ -324,7 +324,6 @@ export default abstract class BaseGameModel<
         reference: null,
       };
     }
-
     this.addGameStateModifier(type, gameStateModifier);
     this.sendGameState();
     const interval = setInterval(() => {

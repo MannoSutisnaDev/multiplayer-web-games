@@ -331,10 +331,16 @@ export default class CheckersGame extends BaseGameModel<
         this.cells,
         player.direction
       );
-      this.players[this.currentPlayerIndex].pieceThatHasStrikedPosition = {
-        row: originTargetPayload.target.row,
-        column: originTargetPayload.target.column,
-      };
+      if (dontSetNextTurn) {
+        this.players[this.currentPlayerIndex].setPieceThatHasStrikedPosition({
+          row: originTargetPayload.target.row,
+          column: originTargetPayload.target.column,
+        });
+      } else {
+        this.players[this.currentPlayerIndex].setPieceThatHasStrikedPosition(
+          null
+        );
+      }
       if (piece.moveMode !== MoveMode.KING) {
         piece.moveMode = MoveMode.ALREADY_STRIKED;
       }
@@ -380,19 +386,7 @@ export default class CheckersGame extends BaseGameModel<
         playerThatWonIndex: lastPlayerIndex,
         returnToLobbyTime: 10,
       };
-      const interval = setInterval(() => {
-        if (!this.gameOver) {
-          return;
-        }
-        if (this.gameOver.returnToLobbyTime > 0) {
-          this.sendGameState();
-          this.gameOver.returnToLobbyTime -= 1;
-          return;
-        }
-        this.sendGameState();
-        clearInterval(interval);
-        deleteGameAndReturnToLobby(this.id);
-      }, 1000);
+      this.scheduleDeleteGameOver(this.gameOver.returnToLobbyTime);
     }
   }
 
