@@ -12,7 +12,7 @@ import { SocketServerSide } from "@/server/types";
 import { routeGuard } from "@/server/utils";
 import { Disconnect } from "@/shared/types/socket-communication/lobby/general";
 
-const port = parseInt(process.env.PORT || "3000", 10);
+const port = parseInt(process.env.PORT || "3001", 10);
 const dev: boolean = process.env.MODE !== "production";
 
 const nextApp = next({ dev, hostname: "localhost", port });

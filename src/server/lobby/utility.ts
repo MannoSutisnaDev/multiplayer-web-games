@@ -4,6 +4,8 @@ import prisma from "@/server/db";
 import BaseGameModel from "@/server/games/base/BaseGameModel";
 import { repository as checkersRepository } from "@/server/games/checkers/CheckersRepository";
 import { PhaseCheckers } from "@/server/games/checkers/phases/checkers";
+import { repository as chessRepository } from "@/server/games/chess/ChessRepository";
+import { PhaseChess } from "@/server/games/chess/phases/chess";
 import { io } from "@/server/init";
 import {
   removeScheduledDelete,
@@ -102,6 +104,9 @@ export const updateUserData = async (socket: SocketServerSide) => {
     switch (gameType) {
       case GameTypes.Checkers:
         setPhase(socket, PhaseCheckers);
+        break;
+      case GameTypes.Chess:
+        setPhase(socket, PhaseChess);
         break;
     }
   }
@@ -366,11 +371,14 @@ export const leaveLobby = async (data: SocketServerSide | string) => {
   } else {
     user = await findUser(data);
   }
+  console.log("leave lobby function");
   if (!user) {
+    console.log("no user");
     return;
   }
   const lobbyId = user.joinedLobbyId;
   if (!lobbyId) {
+    console.log("no lobby id");
     return;
   }
   await prisma.user.update({
@@ -386,14 +394,17 @@ export const leaveLobby = async (data: SocketServerSide | string) => {
     },
   });
   if (!lobby) {
+    console.log("no lobby");
     return;
   }
   await prisma.user.update({
     where: { id: user.id },
     data: { ready: false, joinedLobbyId: null },
   });
-  const game = checkersRepository.findOne(lobby.id);
+  const game = chessRepository.findOne(lobby.id);
+  console.log({ game, lobbyId: lobby.id });
   if (game) {
+    console.log("schedule delete");
     game.leaveGame(user.id);
   }
   if (typeof data !== "string") {
@@ -413,6 +424,7 @@ export const leaveLobby = async (data: SocketServerSide | string) => {
   }
   if (lobby.Users.length === 0) {
     deleteLobby(lobby.id);
+    console.log("delete");
     return;
   } else if (lobby?.lobbyOwnerId === user.id) {
     const player = lobby.Users[0];
@@ -423,8 +435,10 @@ export const leaveLobby = async (data: SocketServerSide | string) => {
     });
     sendUpdatedLobbies();
     sendUpdatedLobby(lobbyId);
+    console.log("send updates1");
     return;
   }
+  console.log("send updates2");
   sendUpdatedLobbies();
   sendUpdatedLobby(lobbyId);
 };
@@ -518,6 +532,9 @@ export const findGameBasedOnLobby = (
   switch (lobby.GameType.name as GameTypes) {
     case GameTypes.Checkers:
       game = checkersRepository.findOne(lobby.id);
+      break;
+    case GameTypes.Chess:
+      game = chessRepository.findOne(lobby.id);
       break;
   }
   return game;

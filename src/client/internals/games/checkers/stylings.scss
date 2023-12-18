@@ -27,6 +27,14 @@ body {
   .row {
     display: flex;
   }
+
+  &.chess {
+    .cell {
+      &.black {
+        background: olivedrab;
+      }
+    }
+  }
 }
 
 .cell {

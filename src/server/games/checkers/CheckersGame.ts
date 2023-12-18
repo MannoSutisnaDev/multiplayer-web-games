@@ -16,11 +16,11 @@ import {
   InterruptingMessage,
   PlayerData,
 } from "@/server/games/types";
-import { deleteGameAndReturnToLobby } from "@/server/lobby/utility";
 import { SocketServerSide } from "@/server/types";
 import {
   Cell,
   CellCollection,
+  CheckersPiece,
   COLUMNS,
   MoveMode,
   OriginTargetPayload,
@@ -36,7 +36,7 @@ export default class CheckersGame extends BaseGameModel<
   CheckersPlayer,
   CheckersGameDataInterface
 > {
-  cells: CellCollection;
+  cells: CellCollection<CheckersPiece>;
   currentPlayerIndex: number;
   gameOver: {
     playerThatWonIndex: number;
@@ -74,7 +74,7 @@ export default class CheckersGame extends BaseGameModel<
     this.gameStarted = data.gameStarted;
   }
 
-  buildCells(cells: CellCollection) {
+  buildCells(cells: CellCollection<CheckersPiece>) {
     for (const data of cells) {
       for (const cell of data) {
         if (cell.playerPiece) {
@@ -158,13 +158,13 @@ export default class CheckersGame extends BaseGameModel<
     this.placePieces(1, this.cells, this.playableCells);
   }
 
-  generateCells(): CellCollection {
+  generateCells(): CellCollection<CheckersPiece> {
     let index = 1;
-    const cellCollection: CellCollection = [];
+    const cellCollection: CellCollection<CheckersPiece> = [];
     for (let row = 0; row < ROWS; row++) {
-      const cellCollectionRow: Array<Cell> = [];
+      const cellCollectionRow: Array<Cell<CheckersPiece>> = [];
       for (let column = 0; column < COLUMNS; column++) {
-        const cell: Cell = {
+        const cell: Cell<CheckersPiece> = {
           index,
           column,
           row,
@@ -206,7 +206,7 @@ export default class CheckersGame extends BaseGameModel<
 
   placePieces(
     playerIndex: number,
-    collection: CellCollection,
+    collection: CellCollection<CheckersPiece>,
     playableCells: PlayableCells
   ): void {
     if (playerIndex === 1) {
@@ -472,18 +472,18 @@ export default class CheckersGame extends BaseGameModel<
     return playerIndex === 1;
   }
 
-  getCells(mirrored = false): CellCollection {
+  getCells(mirrored = false): CellCollection<CheckersPiece> {
     if (mirrored) {
       return this.getCellsMirrored();
     }
     return this.cells;
   }
 
-  getCellsMirrored(): CellCollection {
-    const boardRows: CellCollection = [];
+  getCellsMirrored(): CellCollection<CheckersPiece> {
+    const boardRows: CellCollection<CheckersPiece> = [];
     for (let rowIndex = this.cells.length - 1; rowIndex >= 0; rowIndex--) {
       const columns = this.cells[rowIndex];
-      const boardColumns: Array<Cell> = [];
+      const boardColumns: Array<Cell<CheckersPiece>> = [];
       for (
         let columnIndex = columns.length - 1;
         columnIndex >= 0;

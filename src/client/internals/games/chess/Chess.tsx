@@ -2,7 +2,7 @@
 
 import { useContext, useEffect, useRef } from "react";
 
-import Piece from "@/client/internals/games/checkers/Piece";
+import Piece from "@/client/internals/games/chess/Piece";
 import ChessBoardWrapper, {
   ChessBoardContext,
 } from "@/client/internals/games/shared/chess-board/ChessBoardWrapper";
@@ -14,11 +14,11 @@ import { socket } from "@/client/internals/socket/socket";
 import { ToastMessageContextWrapper } from "@/client/internals/toast-messages/ToastMessageContext";
 import {
   Cell,
-  CheckersPiece,
+  ChessPiece,
   OriginTargetPayload,
 } from "@/shared/types/socket-communication/games/game-types";
 
-function PreCheckers(props: BoardProps<CheckersPiece>) {
+function PreChess(props: BoardProps<ChessPiece>) {
   const { addErrorMessage } = useContext(ToastMessageContextWrapper);
   const {
     setIsLoaded,
@@ -38,7 +38,7 @@ function PreCheckers(props: BoardProps<CheckersPiece>) {
       setTimestamp(new Date().getTime());
       addErrorMessage?.(error);
     });
-    socket.on("CheckersGameStateUpdateResponse", ({ gameData }) => {
+    socket.on("ChessGameStateUpdateResponse", ({ gameData }) => {
       setPlayers(gameData.players);
       setCurrentPlayerIndex(gameData.currentPlayerIndex);
       setSelfPlayerIndex(gameData.selfPlayerIndex);
@@ -57,7 +57,7 @@ function PreCheckers(props: BoardProps<CheckersPiece>) {
 
     return () => {
       socket.removeAllListeners("GenericResponseError");
-      socket.removeAllListeners("CheckersGameStateUpdateResponse");
+      socket.removeAllListeners("ChessGameStateUpdateResponse");
     };
   }, [
     addErrorMessage,
@@ -74,14 +74,14 @@ function PreCheckers(props: BoardProps<CheckersPiece>) {
   return props.board;
 }
 
-const CheckersWrapped = ChessBoardWrapper(PreCheckers);
+const ChessWrapped = ChessBoardWrapper(PreChess);
 
-const FinalCheckers = TwoPlayerTurnBasedWrapper(CheckersWrapped);
+const FinalChess = TwoPlayerTurnBasedWrapper(ChessWrapped);
 
-export default function Checkers() {
+export default function Chess() {
   return (
-    <FinalCheckers
-      renderPiece={(cell: Cell<CheckersPiece> | null) => {
+    <FinalChess
+      renderPiece={(cell: Cell<ChessPiece> | null) => {
         if (cell === null) {
           return;
         }
@@ -90,7 +90,7 @@ export default function Checkers() {
           row: cell.row,
           column: cell.column,
           playerIndex: cell.playerPiece?.playerIndex,
-          moveMode: cell.playerPiece?.moveMode,
+          type: cell.playerPiece?.type,
         };
         return <Piece {...data} />;
       }}
@@ -107,6 +107,7 @@ export default function Checkers() {
       movePiece={(payload: OriginTargetPayload) => {
         socket.emit("MovePiece", payload);
       }}
+      boardClass="chess"
     />
   );
 }

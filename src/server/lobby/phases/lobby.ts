@@ -1,6 +1,7 @@
 import prisma from "@/server/db";
 import BaseGameModel from "@/server/games/base/BaseGameModel";
 import { createGame as createCheckersGame } from "@/server/games/checkers/CheckersRepository";
+import { createGame as createChessGame } from "@/server/games/chess/ChessRepository";
 import {
   findUser,
   findUserWithLobbyItOwns,
@@ -138,15 +139,16 @@ const startGame = (socket: SocketServerSide) => {
     }
     let game: BaseGameModel | null = null;
     try {
+      const lobbyPlayers = lobby.Users.map((user) => ({
+        id: user.id,
+        name: user.username,
+      }));
       switch (lobby.GameType.name as GameTypes) {
         case GameTypes.Checkers:
-          game = createCheckersGame(
-            lobby.id,
-            lobby.Users.map((user) => ({
-              id: user.id,
-              name: user.username,
-            }))
-          );
+          game = createCheckersGame(lobby.id, lobbyPlayers);
+          break;
+        case GameTypes.Chess:
+          game = createChessGame(lobby.id, lobbyPlayers);
           break;
       }
     } catch (e: any) {

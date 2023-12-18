@@ -274,3 +274,62 @@ Create other games
 
 
 
+Prisma reset DB:
+
+npx prisma db push --force-reset && npx prisma db seed
+
+
+Schaken maken
+Liegen maken
+
+Alle drie de games responsive maken (locked screen size)
+Spectator mode
+Replay mode + login + statistics + Oauth login
+Lobby chats
+Invitation system
+Private lobbies
+DM's
+
+PostqreSQL op live server
+
+Home page aanpassen
+Introductie 
+Page transitions
+
+React suspense to load games individually
+
+Reveal animations implementeren op mijn portfolio website
+
+
+Connect four 
+Tic tac toe (complex)
+Backgammon
+Yahtzee
+
+Poker (variants)
+
+
+
+Abstractie maken voor spel
+
+Leave game
+Interrupting message
+
+Spectators 
+Chat
+
+
+
+
+Abstractie maken voor schaakbord
+
+bord
+bord tonen en stukken tonen op het bord
+bewegen van stukken
+laten zien waar je een nieuwe stuk mag neerzetten
+zodra een stuk wordt geplaatst neerzetten en een bericht naar de server sturen
+renderen van stukken
+
+
+
+

@@ -21,4 +21,8 @@ export const GameTypesData = {
     name: "Checkers",
     maxPlayers: 2,
   },
+  [GameTypes.Chess]: {
+    name: "Chess",
+    maxPlayers: 2,
+  },
 };

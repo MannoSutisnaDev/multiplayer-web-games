@@ -2,6 +2,7 @@ import CheckersPlayer from "@/server/games/checkers/CheckersPlayer";
 import {
   Cell,
   CellCollection,
+  CheckersPiece,
   Direction,
   Directions,
   MoveMode,
@@ -15,7 +16,7 @@ export const validateMove = (
   players: Array<CheckersPlayer>,
   piecePlayerIndex: number,
   currentPlayerIndex: number,
-  cellCollection: CellCollection
+  cellCollection: CellCollection<CheckersPiece>
 ): {
   error?: string;
   valid: boolean;
@@ -92,9 +93,9 @@ const validateRegularMove = (
   movePiecePayload: OriginTargetPayload,
   currentPlayerIndex: number,
   player: CheckersPlayer,
-  cellCollection: CellCollection,
+  cellCollection: CellCollection<CheckersPiece>,
   removePieces: Array<{ row: number; column: number }>,
-  targetPiece: Piece
+  targetPiece: CheckersPiece
 ): {
   error?: string;
   valid: boolean;
@@ -154,9 +155,9 @@ const validateAlreadyStrikedMove = (
   movePiecePayload: OriginTargetPayload,
   currentPlayerIndex: number,
   player: CheckersPlayer,
-  cellCollection: CellCollection,
+  cellCollection: CellCollection<CheckersPiece>,
   removePieces: Array<{ row: number; column: number }>,
-  targetPiece: Piece
+  targetPiece: CheckersPiece
 ): {
   error?: string;
   valid: boolean;
@@ -218,7 +219,7 @@ export const generateValidDirections = (
 export const canStrikeOtherOpponentPiece = (
   origin: { row: number; column: number },
   currentPlayerIndex: number,
-  cellCollection: CellCollection,
+  cellCollection: CellCollection<CheckersPiece>,
   direction: PiecesDirection | null
 ): boolean => {
   if (!direction) {
@@ -293,7 +294,7 @@ const generateStrikeValidDirections = (
 export const movePieceValidation = (
   movePiecePayload: OriginTargetPayload,
   player: CheckersPlayer,
-  cellCollection: CellCollection,
+  cellCollection: CellCollection<CheckersPiece>,
   moveMode: MoveMode
 ): {
   valid: boolean;
@@ -345,9 +346,9 @@ export const strikeOpponentPieceValidation = (
   movePiecePayload: OriginTargetPayload,
   currentPlayerIndex: number,
   player: CheckersPlayer,
-  targetPiece: Piece,
+  targetPiece: CheckersPiece,
   removePieces: Array<{ row: number; column: number }>,
-  cellCollection: CellCollection
+  cellCollection: CellCollection<CheckersPiece>
 ): {
   valid: boolean;
   error: string;
@@ -418,7 +419,7 @@ const verifyOpponentPieceInBetween = (
   currentPlayerIndex: number,
   origin: { row: number; column: number },
   opponentPieceDirection: Direction,
-  cellCollection: CellCollection,
+  cellCollection: CellCollection<CheckersPiece>,
   removePieces: Array<{ row: number; column: number }>
 ): boolean => {
   const targetRow = origin.row + opponentPieceDirection.rowDirection;
@@ -476,11 +477,11 @@ export const getRegularDirections = (): Directions => {
 };
 
 export const determineGameOver = (
-  cellCollection: CellCollection,
+  cellCollection: CellCollection<CheckersPiece>,
   playerIndexToCheck: number,
   player: CheckersPlayer
 ): boolean => {
-  const playerPieceCells: Array<Cell> = [];
+  const playerPieceCells: Array<Cell<CheckersPiece>> = [];
   for (const rows of Object.values(cellCollection)) {
     for (const column of Object.values(rows)) {
       if (column.playerPiece?.playerIndex === playerIndexToCheck) {
@@ -540,7 +541,7 @@ export const determineGameOver = (
 };
 
 const createDirectionPayloads = (
-  cell: Cell,
+  cell: Cell<CheckersPiece>,
   directions: Array<Direction>,
   strikeValidation: boolean = false
 ): Array<OriginTargetPayload> => {

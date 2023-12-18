@@ -1,3 +1,5 @@
+import { PIECE_TYPES } from "@/shared/types/socket-communication/games/chess";
+
 export type Direction = {
   rowDirection: number;
   columnDirection: number;
@@ -27,19 +29,6 @@ export interface Player {
   connected: boolean;
 }
 
-export interface Cell {
-  index: number;
-  column: number;
-  row: number;
-  playerPiece: Piece | null;
-}
-
-export interface Piece {
-  index: number;
-  playerIndex: number;
-  moveMode: MoveMode;
-}
-
 export interface GamePosition {
   row: number;
   column: number;
@@ -50,7 +39,46 @@ export interface OriginTargetPayload {
   target: GamePosition;
 }
 
-export type CellCollection = Array<Array<Cell>>;
+export interface BaseCell {
+  index: number;
+  column: number;
+  row: number;
+}
+
+export interface Cell<T extends Piece> extends BaseCell {
+  playerPiece: T | null;
+}
+
+export interface Piece {
+  playerIndex: number;
+}
+
+export interface ChessPiece extends Piece {
+  row: number;
+  column: number;
+  type: PIECE_TYPES;
+}
+
+export interface CheckersPiece extends Piece {
+  moveMode: MoveMode;
+}
+
+export type CellCollection<T extends Piece> = Array<Array<Cell<T>>>;
+
+export interface BasePlayerModelInterface {
+  id: string;
+  name: string;
+  ready: boolean;
+  connected: boolean;
+}
+
+export interface ChessBoardPlayerInterface extends BasePlayerModelInterface {
+  direction: PiecesDirection | null;
+}
+
+export interface CheckersPlayerInterface extends ChessBoardPlayerInterface {
+  pieceThatHasStrikedPosition: GamePosition | null;
+}
 
 export type PlayableCells = Array<{ row: number; column: number }>;
 
