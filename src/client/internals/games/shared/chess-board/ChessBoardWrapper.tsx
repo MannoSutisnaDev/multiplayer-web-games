@@ -31,7 +31,6 @@ import {
   Piece,
   ROWS,
 } from "@/shared/types/socket-communication/games/game-types";
-import { debounce } from "@/shared/utility";
 
 export const ChessBoardContext = createContext<ChessBoardInterface>({
   isDragging: false,
@@ -41,8 +40,6 @@ export const ChessBoardContext = createContext<ChessBoardInterface>({
   calculatingAreasRef: null,
   gamePositionsRef: null,
   areasDataRef: null,
-  timestamp: null,
-  setTimestamp: () => null,
   gameCells: [],
   setGameCells: () => {},
 });
@@ -61,7 +58,6 @@ export default function ChessBoardWrapper<
     const [isDragging, setIsDragging] = useState(false);
     const [selectedPiece, setSelectedPiece] =
       useState<SelectedPieceData | null>(null);
-    const [timestamp, setTimestamp] = useState<number>(new Date().getTime());
     const [gameCells, setGameCells] = useState<
       CellCollection<Pick<T, "playerIndex">>
     >([]);
@@ -81,6 +77,11 @@ export default function ChessBoardWrapper<
           selectedPieceRef.current = selectedPiece;
           setSelectedPiece(selectedPiece);
         } else {
+          const currentPiece = selectedPieceRef.current?.element;
+          if (currentPiece) {
+            currentPiece.style.top = "initial";
+            currentPiece.style.left = "initial";
+          }
           setBodyClass("");
           setIsDragging(false);
           selectedPieceRef.current = null;
@@ -234,7 +235,14 @@ export default function ChessBoardWrapper<
         body.removeEventListener("mousemove", mouseMove);
         body.removeEventListener("mouseup", mouseUp);
       };
-    }, [bodyRef, isDragging, props, selectedPiece, setSelectedPieceFull]);
+    }, [
+      bodyRef,
+      calculateAreasData,
+      isDragging,
+      props,
+      selectedPiece,
+      setSelectedPieceFull,
+    ]);
 
     const rowCollection: Array<Array<JSX.Element>> = [];
     for (const cells of gameCells) {
@@ -282,8 +290,6 @@ export default function ChessBoardWrapper<
           selectedPieceRef,
           gameCells,
           setGameCells,
-          timestamp,
-          setTimestamp,
         }}
       >
         <WrappedComponent {...props} board={board} />

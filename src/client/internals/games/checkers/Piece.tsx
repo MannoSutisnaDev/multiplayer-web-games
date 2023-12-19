@@ -15,13 +15,8 @@ export default function Piece({
   playerIndex,
   moveMode,
 }: Partial<CheckersPiece> & BaseCell) {
-  const {
-    isDragging,
-    selectedPieceRef,
-    selectedPiece,
-    setSelectedPiece,
-    timestamp,
-  } = useContext(ChessBoardContext);
+  const { isDragging, selectedPieceRef, selectedPiece, setSelectedPiece } =
+    useContext(ChessBoardContext);
   const pieceRef = useRef<HTMLDivElement>(null);
 
   const { currentPlayerIndex, selfPlayerIndex } = useContext(
@@ -55,7 +50,6 @@ export default function Piece({
     }
     piece = (
       <div
-        key={`piece-${timestamp}`}
         className={`piece ${pieceColor} ${typeClass} ${iconClass} ${selectedClass}`}
         ref={pieceRef}
         onMouseDown={(e) => {

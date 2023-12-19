@@ -455,7 +455,7 @@ export default class CheckersGame extends BaseGameModel<
         : `Player: '${winningPlayer.name}' has won!`;
     const message = `${winMessage} \n\n You will be returned to the loby in ${secondsLeft} seconds.`;
     return {
-      title: "Not all players are connected",
+      title: winMessage,
       message,
     };
   }

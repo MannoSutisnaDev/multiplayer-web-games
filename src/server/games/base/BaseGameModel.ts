@@ -305,7 +305,6 @@ export default abstract class BaseGameModel<
     const func: GameStateModifier = (socket, gameData) => {
       gameData.interruptingMessage = this.creatPlayersLeftInterruptingMessage();
     };
-    console.log("schedule players left!");
     this.scheduleDelete(DeleteGameTypes.PlayersLeft, func, deleteAfterSeconds);
   }
 

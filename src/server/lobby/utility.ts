@@ -371,14 +371,11 @@ export const leaveLobby = async (data: SocketServerSide | string) => {
   } else {
     user = await findUser(data);
   }
-  console.log("leave lobby function");
   if (!user) {
-    console.log("no user");
     return;
   }
   const lobbyId = user.joinedLobbyId;
   if (!lobbyId) {
-    console.log("no lobby id");
     return;
   }
   await prisma.user.update({
@@ -394,7 +391,6 @@ export const leaveLobby = async (data: SocketServerSide | string) => {
     },
   });
   if (!lobby) {
-    console.log("no lobby");
     return;
   }
   await prisma.user.update({
@@ -402,9 +398,7 @@ export const leaveLobby = async (data: SocketServerSide | string) => {
     data: { ready: false, joinedLobbyId: null },
   });
   const game = chessRepository.findOne(lobby.id);
-  console.log({ game, lobbyId: lobby.id });
   if (game) {
-    console.log("schedule delete");
     game.leaveGame(user.id);
   }
   if (typeof data !== "string") {
@@ -424,7 +418,6 @@ export const leaveLobby = async (data: SocketServerSide | string) => {
   }
   if (lobby.Users.length === 0) {
     deleteLobby(lobby.id);
-    console.log("delete");
     return;
   } else if (lobby?.lobbyOwnerId === user.id) {
     const player = lobby.Users[0];
@@ -435,10 +428,8 @@ export const leaveLobby = async (data: SocketServerSide | string) => {
     });
     sendUpdatedLobbies();
     sendUpdatedLobby(lobbyId);
-    console.log("send updates1");
     return;
   }
-  console.log("send updates2");
   sendUpdatedLobbies();
   sendUpdatedLobby(lobbyId);
 };

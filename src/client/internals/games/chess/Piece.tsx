@@ -28,13 +28,8 @@ export default function Piece({
   playerIndex,
   type,
 }: Partial<ChessPiece> & BaseCell) {
-  const {
-    isDragging,
-    selectedPieceRef,
-    selectedPiece,
-    setSelectedPiece,
-    timestamp,
-  } = useContext(ChessBoardContext);
+  const { isDragging, selectedPieceRef, selectedPiece, setSelectedPiece } =
+    useContext(ChessBoardContext);
   const pieceRef = useRef<HTMLDivElement>(null);
 
   const { currentPlayerIndex, selfPlayerIndex } = useContext(

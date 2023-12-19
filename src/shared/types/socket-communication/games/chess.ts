@@ -8,6 +8,7 @@ import {
 export const MovePiece = "MovePiece";
 export const ReadyToPlay = "ReadyToPlay";
 export const LeaveGame = "LeaveGame";
+export const ResetGame = "ResetGame";
 
 export const RequestGameStateUpdate = "RequestGameStateUpdate";
 export const ChessGameStateUpdateResponse = "ChessGameStateUpdateResponse";
@@ -20,6 +21,7 @@ export interface PhaseChessTypes {
     [ReadyToPlay]: () => void;
     [LeaveGame]: () => void;
     [RequestGameStateUpdate]: () => void;
+    [ResetGame]: () => void;
   };
   ServerToClient: {
     [ChessGameStateUpdateResponse]: ({

@@ -27,15 +27,13 @@ function PreChess(props: BoardProps<ChessPiece>) {
     setSelfPlayerIndex,
     setInterruptingMessage,
   } = useContext(TwoPlayerTurnBasedContext);
-  const { setGameCells, setSelectedPiece, setTimestamp } =
-    useContext(ChessBoardContext);
+  const { setGameCells, setSelectedPiece } = useContext(ChessBoardContext);
 
   const signaledReady = useRef<boolean>(false);
 
   useEffect(() => {
     socket.on("GenericResponseError", ({ error }: { error: string }) => {
       setSelectedPiece(null, false);
-      setTimestamp(new Date().getTime());
       addErrorMessage?.(error);
     });
     socket.on("ChessGameStateUpdateResponse", ({ gameData }) => {
@@ -46,7 +44,6 @@ function PreChess(props: BoardProps<ChessPiece>) {
       setIsLoaded(true);
       setSelectedPiece(null, false);
       setGameCells(gameData.cells);
-      setTimestamp(new Date().getTime());
     });
 
     if (!signaledReady.current) {
@@ -68,7 +65,6 @@ function PreChess(props: BoardProps<ChessPiece>) {
     setPlayers,
     setSelectedPiece,
     setSelfPlayerIndex,
-    setTimestamp,
   ]);
 
   return props.board;
@@ -103,6 +99,9 @@ export default function Chess() {
           return;
         }
         socket.emit("LeaveGame");
+      }}
+      resetFunction={() => {
+        socket.emit("ResetGame");
       }}
       movePiece={(payload: OriginTargetPayload) => {
         socket.emit("MovePiece", payload);

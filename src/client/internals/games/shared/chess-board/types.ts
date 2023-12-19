@@ -21,8 +21,6 @@ export interface ChessBoardInterface {
   gamePositionsRef: MutableRefObject<Map<string, HTMLElement>> | null;
   areasDataRef: MutableRefObject<Map<string, QuadrilateralInterface>> | null;
   selectedPieceRef: MutableRefObject<SelectedPieceData | null> | null;
-  timestamp: number | null;
-  setTimestamp: Dispatch<SetStateAction<number>>;
   gameCells: CellCollection<Piece>;
   setGameCells: Dispatch<SetStateAction<CellCollection<Piece>>>;
 }
@@ -36,5 +34,5 @@ export interface BoardProps<T extends Piece> extends TwoPlayerTurnBasedProps {
 
 export type BoardPropsPreRender<T extends Piece> = Pick<
   BoardProps<T>,
-  "renderPiece" | "leaveFunction" | "movePiece" | "boardClass"
+  "renderPiece" | "leaveFunction" | "movePiece" | "boardClass" | "resetFunction"
 >;

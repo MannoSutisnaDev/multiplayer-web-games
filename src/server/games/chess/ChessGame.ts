@@ -5,7 +5,13 @@ import ChessPlayer from "@/server/games/chess/models/ChessPlayer";
 import type BasePiece from "@/server/games/chess/models/pieces/BasePiece";
 import type King from "@/server/games/chess/models/pieces/King";
 import type Pawn from "@/server/games/chess/models/pieces/Pawn";
-import { FetchGame, ValidPositionCollection } from "@/server/games/chess/types";
+import {
+  FetchGame,
+  PLAYER_ONE_PIECES,
+  PLAYER_TWO_PIECES,
+  PlayerPiecesCollection,
+  ValidPositionCollection,
+} from "@/server/games/chess/types";
 import {
   checkValidMovesForAllPieces,
   determineCheckedAfterMove,
@@ -83,18 +89,39 @@ export default class ChessGame extends BaseGameModel<
   }
 
   placeAllPieces(cellCollection: CellCollection<ChessPiece>) {
-    checkScenario1(this);
-    // const validMoves = checkValidMovesForAllPieces(this, this.currentPlayerIndex);
-    // printValidPositionsCollection(validMoves);
+    // checkScenario1(this);
+    this.placePlayerOnePieces(cellCollection);
+    this.placePlayerTwoPieces(cellCollection);
+  }
 
-    // this.printGame(projectedCells);
+  placePlayerOnePieces(cellCollection: CellCollection<ChessPiece>) {
+    this.placePiecsForPlayer(0, 6, cellCollection, PLAYER_ONE_PIECES);
+  }
 
-    // printValidPositionsCollection(validMovesPreviousPlayer);
-    // this.placePlayerOnePieces(cellCollection);
-    // this.placePlayerTwoPieces(cellCollection);
+  placePlayerTwoPieces(cellCollection: CellCollection<ChessPiece>) {
+    this.placePiecsForPlayer(1, 0, cellCollection, PLAYER_TWO_PIECES);
+  }
 
-    // const valid = checkValidMovesForAllPieces(this, this.currentPlayerIndex);
-    // printValidPositionsCollection(valid);
+  placePiecsForPlayer(
+    playerIndex: number,
+    rowIndex: number,
+    cellCollection: CellCollection<ChessPiece>,
+    playerPiecesCollection: PlayerPiecesCollection
+  ) {
+    for (const pieces of playerPiecesCollection) {
+      let columnIndex = 0;
+      for (const pieceType of pieces) {
+        cellCollection[rowIndex][columnIndex].playerPiece = PieceBuilder(
+          pieceType,
+          rowIndex,
+          columnIndex,
+          playerIndex,
+          this.generateFetchGameFunction()
+        );
+        columnIndex++;
+      }
+      rowIndex++;
+    }
   }
 
   destroyGame() {
@@ -106,9 +133,9 @@ export default class ChessGame extends BaseGameModel<
     this.gameStarted = data.gameStarted;
     const players: ChessPlayer[] = [];
     for (const player of data.players) {
-      const checkersPlayer = new ChessPlayer();
-      checkersPlayer.rebuild(player);
-      players.push(checkersPlayer);
+      const chessPlayer = new ChessPlayer();
+      chessPlayer.rebuild(player);
+      players.push(chessPlayer);
     }
     this.players = players;
     this.cells = this.buildCells(data.cells);
@@ -133,9 +160,7 @@ export default class ChessGame extends BaseGameModel<
             this.generateFetchGameFunction(),
             true
           );
-
-          // piece.rebuild(cell.playerPiece);
-          // cell.playerPiece = piece;
+          piece.rebuild(cell.playerPiece);
           newCell.setPiece(piece);
         }
         newColumnCells.push(newCell);
@@ -143,7 +168,7 @@ export default class ChessGame extends BaseGameModel<
       }
       newCells.push(newColumnCells);
     }
-    return cells;
+    return newCells;
   }
 
   createState(): ChessGameInterface {
@@ -283,10 +308,7 @@ export default class ChessGame extends BaseGameModel<
         );
       }
 
-      if (
-        player.state === PlayerState.Check &&
-        cell.playerPiece.type !== PIECE_TYPES.KING
-      ) {
+      if (cell.playerPiece.type !== PIECE_TYPES.KING) {
         if (
           determineCheckedAfterMove(
             this,
@@ -296,9 +318,7 @@ export default class ChessGame extends BaseGameModel<
             targetColumn
           )
         ) {
-          throw new Error(
-            "You're checked, you have to get your king out of the situation."
-          );
+          throw new Error("This move will get you checked.");
         }
         player.state = PlayerState.Regular;
       }
@@ -306,6 +326,7 @@ export default class ChessGame extends BaseGameModel<
       this.sendGameState();
     } catch (e) {
       if (e instanceof Error && e.message) {
+        console.error(e);
         socket.emit("GenericResponseError", {
           error: e.message,
         });
@@ -352,11 +373,12 @@ export default class ChessGame extends BaseGameModel<
     }
     this.currentPlayerIndex = nextPlayerIndex;
 
-    const currentPlayerState = determinePlayerState(this);
+    const currentPlayerState = determinePlayerState(
+      this,
+      this.currentPlayerIndex
+    );
 
     this.players[this.currentPlayerIndex].setState(currentPlayerState);
-
-    const playerStates = this.players.map((player) => player.state);
 
     if (currentPlayerState !== PlayerState.CheckMate) {
       return;
@@ -364,7 +386,7 @@ export default class ChessGame extends BaseGameModel<
 
     this.gameOver = {
       playerThatWonIndex: this.currentPlayerIndex,
-      returnToLobbyTime: 10,
+      returnToLobbyTime: 60,
     };
     this.scheduleDeleteGameOver(this.gameOver.returnToLobbyTime);
 
@@ -410,7 +432,7 @@ export default class ChessGame extends BaseGameModel<
         : `Player: '${winningPlayer.name}' has won!`;
     const message = `${winMessage} \n\n You will be returned to the loby in ${secondsLeft} seconds.`;
     return {
-      title: "Not all players are connected",
+      title: winMessage,
       message,
     };
   }
@@ -425,19 +447,27 @@ export default class ChessGame extends BaseGameModel<
 
   getAllValidMovesForPlayer(
     playerIndex: number,
-    projectedCells?: CellCollection<ChessPiece>
+    projectedCells?: CellCollection<ChessPiece>,
+    excludePieces?: PIECE_TYPES[]
   ): ValidPositionCollection {
-    return checkValidMovesForAllPieces(this, playerIndex, projectedCells);
+    return checkValidMovesForAllPieces(
+      this,
+      playerIndex,
+      projectedCells,
+      excludePieces
+    );
   }
 
   getPreviousPlayerIndex(indexToStartFrom?: number): number {
-    const currentPlayerIndex = indexToStartFrom ?? this.currentPlayerIndex - 1;
-    let previousPlayerIndex = currentPlayerIndex;
+    let newPlayerIndex =
+      typeof indexToStartFrom === "number"
+        ? indexToStartFrom - 1
+        : this.currentPlayerIndex - 1;
     const endIndex = this.players.length - 1;
-    if (previousPlayerIndex < 0) {
-      previousPlayerIndex = endIndex;
+    if (newPlayerIndex < 0) {
+      newPlayerIndex = endIndex;
     }
-    return previousPlayerIndex;
+    return newPlayerIndex;
   }
 
   generateFetchGameFunction(): FetchGame {
@@ -464,7 +494,7 @@ export default class ChessGame extends BaseGameModel<
             const convertedPiece = piece as King;
             hasMoved = convertedPiece.hasMoved;
           }
-          cell.playerPiece = PieceBuilder(
+          const newPiece = PieceBuilder(
             piece.type,
             piece.row,
             piece.column,
@@ -472,6 +502,7 @@ export default class ChessGame extends BaseGameModel<
             this.generateFetchGameFunction(),
             hasMoved
           );
+          cell.setPiece(newPiece);
         }
         arrayCells.push(cell);
         cellIndex++;

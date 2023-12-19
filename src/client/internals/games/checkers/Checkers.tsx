@@ -27,15 +27,13 @@ function PreCheckers(props: BoardProps<CheckersPiece>) {
     setSelfPlayerIndex,
     setInterruptingMessage,
   } = useContext(TwoPlayerTurnBasedContext);
-  const { setGameCells, setSelectedPiece, setTimestamp } =
-    useContext(ChessBoardContext);
+  const { setGameCells, setSelectedPiece } = useContext(ChessBoardContext);
 
   const signaledReady = useRef<boolean>(false);
 
   useEffect(() => {
     socket.on("GenericResponseError", ({ error }: { error: string }) => {
       setSelectedPiece(null, false);
-      setTimestamp(new Date().getTime());
       addErrorMessage?.(error);
     });
     socket.on("CheckersGameStateUpdateResponse", ({ gameData }) => {
@@ -46,7 +44,6 @@ function PreCheckers(props: BoardProps<CheckersPiece>) {
       setIsLoaded(true);
       setSelectedPiece(null, false);
       setGameCells(gameData.cells);
-      setTimestamp(new Date().getTime());
     });
 
     if (!signaledReady.current) {
@@ -68,7 +65,6 @@ function PreCheckers(props: BoardProps<CheckersPiece>) {
     setPlayers,
     setSelectedPiece,
     setSelfPlayerIndex,
-    setTimestamp,
   ]);
 
   return props.board;

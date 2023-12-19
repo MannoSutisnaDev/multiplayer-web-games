@@ -84,6 +84,9 @@ export default function TwoPlayerTurnBasedWrapper<
           <button className="leave-button" onClick={props.leaveFunction}>
             Leave game
           </button>
+          {/* <button className="reset-button" onClick={props.resetFunction}>
+            Reset
+          </button> */}
           {!isLoaded ? (
             <>
               <div className="main">Loading...</div>
