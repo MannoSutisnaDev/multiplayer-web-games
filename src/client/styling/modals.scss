@@ -39,8 +39,8 @@
 
   .form-row {
     margin-top: 10px;
-    display: flex;
-    justify-content: space-evenly;
+    display: grid;
+    grid-template-columns: 0.75fr 0.5fr;
     width: 100%;
     .form-row-label {
       display: flex;

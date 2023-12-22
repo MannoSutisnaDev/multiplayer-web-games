@@ -333,3 +333,69 @@ renderen van stukken
 
 
 
+Notes:
+- Responsive design maken voor hele game
+- Spectator mode
+- Bij interrupting messages wel de game kunnen leaven
+- Liegen maken
+- Zweeds pesten maken
+- Categoriën maken
+- Ranking maken
+  - games terug kunnen kijken
+  - zien hoeveel games je hebt gewonnen / verloren
+  - inlogsysteem
+  - login with google
+
+- 4 op een rij
+- boter kaas en eieren advanced
+- Pokeren maken
+
+- Chat systeem
+
+- Private lobbies
+- Invites sturen
+
+- Postgresql databaseon live environment
+
+- Next JS code splitting, conditionally de games inladen
+
+- Intro animation 
+- Page transitions
+
+
+- Pong
+- Tetris
+- Multiplayer snake
+- Multiplayer pac man
+- Geometry dash multiplayer
+- Tanks (crash bash inspired)
+- 3D puzzle game
+
+
+Scrollable table body
+https://codereview.stackexchange.com/questions/160979/fixed-table-header-with-scrollable-body-and-aligning-columns
+
+Liquid drum n base mix:
+https://www.youtube.com/watch?v=epwG5nEHbYg
+
+Vibey house mix:
+https://www.youtube.com/watch?v=Rzim9iLFdrY
+
+
+
+
+Responsive tables overzetten
+
+Modal responsive maken
+
+Chess en Checkers responsive maken
+
+Spectator mode maken
+
+
+
+bright purple
+#800080
+
+dark purple
+#400040

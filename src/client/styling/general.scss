@@ -1,6 +1,33 @@
+$lobbies-mobile-cutoff: 760px;
+
 html,
 button {
   font-family: Arial, Helvetica, sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+}
+
+h1 {
+  margin-top: 20px;
+  margin-bottom: 20px;
+}
+
+::-webkit-scrollbar-track {
+  -webkit-box-shadow: inset 0 0 6px rgba(0, 0, 0, 0.3);
+  background-color: #f5f5f5;
+}
+
+::-webkit-scrollbar {
+  width: 6px;
+  background-color: #f5f5f5;
+}
+
+::-webkit-scrollbar-thumb {
+  background-color: #000000;
+  border: 2px solid #555555;
 }
 
 body {
@@ -54,141 +81,6 @@ body {
   }
 }
 
-.waiting-room-body {
-  width: 90vw;
-  height: 80vh;
-  margin-top: 20px;
-  display: flex;
-  justify-content: center;
-  font-family: "Helvetica", "Arial", sans-serif;
-
-  .waiting-room-info {
-    border: solid black 1px;
-    position: relative;
-    border-bottom: 1px solid white;
-    background: rgba(0, 0, 0, 0.5);
-  }
-
-  .waiting-room-title {
-    margin: 10px;
-    color: white;
-  }
-
-  .waiting-room-container {
-    border: 1px solid white;
-    width: 90%;
-    height: 500px;
-    display: flex;
-    flex-direction: column;
-  }
-
-  .waiting-room-columns {
-    .waiting-room-row {
-      background: initial;
-      height: initial;
-      > h2 {
-        margin-top: 0px;
-        margin-bottom: 0px;
-      }
-    }
-  }
-
-  .waiting-room-rows {
-    padding-top: 5px;
-    flex: 1;
-    background: rgba(0, 0, 0, 0.5);
-  }
-
-  .waiting-room-row {
-    color: white;
-    margin-top: 20px;
-    background: rgba(0, 0, 0, 0.7);
-    border-radius: 13px;
-    height: 50px;
-    margin: 5px;
-    display: flex;
-    align-items: center;
-  }
-
-  .waiting-room-row {
-    > h2:first-child {
-      margin-left: 10px;
-    }
-  }
-
-  .button-section {
-    margin: 10px;
-    display: flex;
-    column-gap: 10px;
-    button {
-      padding: 10px;
-      background: #301934;
-      color: white;
-    }
-
-    &.left-right {
-      display: flex;
-      justify-content: space-between;
-      .left-section,
-      .right-section {
-        display: flex;
-        column-gap: 10px;
-      }
-    }
-  }
-}
-
-.lobbies-body {
-  .lobbies-container {
-    background: #c68793;
-  }
-  .lobby-row {
-    .lobby-name {
-      flex: 2;
-      word-break: break-word;
-    }
-    .game-name {
-      flex: 1;
-    }
-    .player-info {
-      flex: 1;
-    }
-    .join {
-      flex: 1;
-      > button {
-        background: #938ac6;
-        color: #fffefd;
-        padding: 10px 20px 10px 20px;
-      }
-    }
-  }
-}
-
-.lobby-body {
-  .lobby-container {
-    background: purple;
-  }
-  .player-row {
-    .player-self {
-      color: #0096ff;
-    }
-    .name {
-      flex: 1;
-    }
-    .status {
-      flex: 2;
-    }
-    .options {
-      flex: 1;
-    }
-    .options-content {
-      display: flex;
-      justify-content: flex-end;
-      margin-right: 20px;
-    }
-  }
-}
-
 button {
   cursor: pointer;
   &:disabled {
@@ -203,8 +95,8 @@ button {
     cursor: pointer;
   }
   .dot {
-    width: 10px;
-    height: 10px;
+    width: 7px;
+    height: 7px;
     border-radius: 50%;
     background-color: beige;
     margin-top: 4px;
@@ -213,11 +105,11 @@ button {
     position: absolute;
     top: 40px;
     width: 200px;
-    background: #111;
     margin-top: 5px;
     margin-left: -180px;
     border-radius: 10px;
     z-index: 10;
+    background: transparent;
 
     div {
       &:first-child {
@@ -232,6 +124,7 @@ button {
     }
 
     .info {
+      background: #111;
       font-size: 16px;
       color: white;
       border-bottom: 1px solid white;
