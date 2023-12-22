@@ -33,12 +33,18 @@ export default function ResponsiveTable<
   const columnClasses = Object.keys(columns);
   const columnNames = Object.values(columns);
 
-  const createRow = (data: T | null, index: number) => {
+  console.log({ extraColumnClasses });
+
+  const createRow = (
+    data: T | null,
+    index: number,
+    extraClasses: (string | null)[]
+  ) => {
     const rowColumns = [];
     const values = data !== null ? Object.values(data) : null;
     for (let i = 0; i < columnClasses.length; i++) {
       const mobileLabel = columnNames[i] ? `${columnNames[i]}: ` : "";
-      const extraClass = extraColumnClasses?.[index]?.[i] ?? "";
+      const extraClass = extraClasses?.[i] ?? "";
       rowColumns.push(
         <td
           key={`column-${i}`}
@@ -63,12 +69,16 @@ export default function ResponsiveTable<
 
   const tableRows = [];
   if (data.length > 0) {
-    tableRows.push(createRow(null, -1));
+    tableRows.push(createRow(null, -1, []));
     let index = 0;
+    let realIndex = 0;
     for (const row of data) {
-      tableRows.push(createRow(row, index));
+      tableRows.push(
+        createRow(row, index, extraColumnClasses?.[realIndex] ?? [])
+      );
       index += 1;
-      tableRows.push(createRow(null, index));
+      realIndex += 1;
+      tableRows.push(createRow(null, index, []));
       index += 1;
     }
   }
