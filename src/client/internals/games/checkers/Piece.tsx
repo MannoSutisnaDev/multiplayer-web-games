@@ -1,4 +1,4 @@
-import { useContext, useRef } from "react";
+import { MouseEvent, TouchEvent, useContext, useRef } from "react";
 
 import { ChessBoardContext } from "@/client/internals/games/shared/chess-board/ChessBoardWrapper";
 import { TwoPlayerTurnBasedContext } from "@/client/internals/games/shared/two-player-turn-based/TwoPlayerTurnBasedWrapper";
@@ -48,29 +48,31 @@ export default function Piece({
           ? "selected"
           : "";
     }
+    const mouseDown = (e: MouseEvent | TouchEvent) => {
+      e.preventDefault();
+      if (
+        isDragging ||
+        !selectedPieceRef ||
+        !pieceRef.current ||
+        selectedPieceRef.current?.dropped
+      ) {
+        return;
+      }
+      setSelectedPiece(
+        {
+          selectedPiece: { row, column, playerIndex },
+          dropped: false,
+          element: pieceRef.current,
+        },
+        false
+      );
+    };
     piece = (
       <div
         className={`piece ${pieceColor} ${typeClass} ${iconClass} ${selectedClass}`}
         ref={pieceRef}
-        onMouseDown={(e) => {
-          e.preventDefault();
-          if (
-            isDragging ||
-            !selectedPieceRef ||
-            !pieceRef.current ||
-            selectedPieceRef.current?.dropped
-          ) {
-            return;
-          }
-          setSelectedPiece(
-            {
-              selectedPiece: { row, column, playerIndex },
-              dropped: false,
-              element: pieceRef.current,
-            },
-            false
-          );
-        }}
+        onMouseDown={mouseDown}
+        onTouchStart={mouseDown}
       >
         {typeClass === "king" ? "K" : ""}
       </div>

@@ -119,7 +119,7 @@ export default function ChessBoardWrapper<
         return;
       }
       const mouseMove = (e: Event) => {
-        e.preventDefault();
+        // e.preventDefault();
         const piece = selectedPieceRef.current?.element;
         if (!isDragging || !piece) {
           return;
@@ -228,12 +228,16 @@ export default function ChessBoardWrapper<
       };
       body.addEventListener("mousemove", mouseMove);
       body.addEventListener("mouseup", mouseUp);
+      body.addEventListener("touchmove", mouseMove);
+      body.addEventListener("touchend", mouseUp);
       return () => {
         if (!body) {
           return;
         }
         body.removeEventListener("mousemove", mouseMove);
         body.removeEventListener("mouseup", mouseUp);
+        body.removeEventListener("touchmove", mouseMove);
+        body.removeEventListener("touchend", mouseUp);
       };
     }, [
       bodyRef,

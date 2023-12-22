@@ -103,6 +103,7 @@ export default function Checkers() {
       movePiece={(payload: OriginTargetPayload) => {
         socket.emit("MovePiece", payload);
       }}
+      boardClass="checkers"
     />
   );
 }

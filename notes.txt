@@ -394,6 +394,13 @@ Spectator mode maken
 
 
 
+To test
+  Black
+  7,3 king
+  White
+  6,5 knight
+  3,1 queen
+
 bright purple
 #800080
 

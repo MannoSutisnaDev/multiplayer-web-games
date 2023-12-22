@@ -50,8 +50,6 @@ export default function Lobby() {
 
   const playerIsOwner = playerSelf?.LobbyItOwns?.id === lobbyId;
 
-  console.log({ playerIsOwner });
-
   const title = lobby
     ? `Lobby "${lobby?.name}" | Game "${lobby.GameType.name}"`
     : "";

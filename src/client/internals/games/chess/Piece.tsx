@@ -1,5 +1,5 @@
 import Image from "next/image";
-import { useCallback, useContext, useRef } from "react";
+import { MouseEvent, TouchEvent, useCallback, useContext, useRef } from "react";
 
 import bishopBlack from "@/client/internals/games/chess/assets/bishop-black.svg";
 import bishopWhite from "@/client/internals/games/chess/assets/bishop-white.svg";
@@ -114,29 +114,33 @@ export default function Piece({
           ? "selected"
           : "";
     }
+
+    const mouseDown = (e: MouseEvent | TouchEvent) => {
+      e.preventDefault();
+      if (
+        isDragging ||
+        !selectedPieceRef ||
+        !pieceRef.current ||
+        selectedPieceRef.current?.dropped
+      ) {
+        return;
+      }
+      setSelectedPiece(
+        {
+          selectedPiece: { row, column, playerIndex },
+          dropped: false,
+          element: pieceRef.current,
+        },
+        false
+      );
+    };
+
     piece = (
       <div
         className={`piece ${iconClass} ${selectedClass}`}
         ref={pieceRef}
-        onMouseDown={(e) => {
-          e.preventDefault();
-          if (
-            isDragging ||
-            !selectedPieceRef ||
-            !pieceRef.current ||
-            selectedPieceRef.current?.dropped
-          ) {
-            return;
-          }
-          setSelectedPiece(
-            {
-              selectedPiece: { row, column, playerIndex },
-              dropped: false,
-              element: pieceRef.current,
-            },
-            false
-          );
-        }}
+        onMouseDown={mouseDown}
+        onTouchStart={mouseDown}
       >
         {<Image src={determineImage(type, playerIndex) ?? ""} alt={type} />}
       </div>

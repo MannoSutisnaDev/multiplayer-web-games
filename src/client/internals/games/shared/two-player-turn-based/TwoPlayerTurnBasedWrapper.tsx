@@ -81,12 +81,10 @@ export default function TwoPlayerTurnBasedWrapper<
           message={interruptingMessage?.message ?? ""}
         />
         <div className="main-wrapper">
-          <button className="leave-button" onClick={props.leaveFunction}>
-            Leave game
-          </button>
           {/* <button className="reset-button" onClick={props.resetFunction}>
             Reset
           </button> */}
+          <div className="header"></div>
           {!isLoaded ? (
             <>
               <div className="main">Loading...</div>
@@ -107,6 +105,15 @@ export default function TwoPlayerTurnBasedWrapper<
               </div>
             </div>
           )}
+          <div className="footer">
+            <button
+              className="leave-button"
+              onClick={props?.leaveFunction}
+              onTouchStart={props?.leaveFunction}
+            >
+              Leave game
+            </button>
+          </div>
         </div>
       </TwoPlayerTurnBasedContext.Provider>
     );

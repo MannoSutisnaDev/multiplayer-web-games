@@ -5,7 +5,7 @@ import { BasePlayerModelInterface } from "@/shared/types/socket-communication/ga
 
 export interface TwoPlayerTurnBasedProps {
   leaveFunction: () => void;
-  resetFunction: () => void;
+  resetFunction?: () => void;
 }
 
 export interface TwoPlayerTurnBasedContextInterface<

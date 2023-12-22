@@ -33,8 +33,6 @@ export default function ResponsiveTable<
   const columnClasses = Object.keys(columns);
   const columnNames = Object.values(columns);
 
-  console.log({ extraColumnClasses });
-
   const createRow = (
     data: T | null,
     index: number,

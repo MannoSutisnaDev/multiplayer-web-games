@@ -134,7 +134,7 @@
               padding: 0rem;
               display: flex;
               align-items: center;
-              @media (max-width: 650px) {
+              @media (max-width: #{$lobbies-mobile-cutoff}) {
                 display: grid;
                 padding: 1rem;
               }
@@ -269,7 +269,7 @@
   }
 }
 
-@media (max-width: 650px) {
+@media (max-width: #{$lobbies-mobile-cutoff}) {
   .lobbies-body {
     .lobbies-table {
       width: 95vw;
