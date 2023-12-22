@@ -5,6 +5,7 @@ import {
   ValidPositionCollection,
   ValidPositionType,
 } from "@/server/games/chess/types";
+import { printValidPositionsCollection } from "@/server/games/chess/utils/general";
 import {
   generateValidPositionCollection,
   setValidDiagonalCells,
@@ -69,7 +70,6 @@ export default class King extends BasePiece {
     const validMovesPreviousPlayer = game.getAllValidMovesForPlayer(
       game.getPreviousPlayerIndex()
     );
-    console.log({ result: validMovesPreviousPlayer[targetRow][targetColumn] });
     if (
       validMovesPreviousPlayer[targetRow][targetColumn].isValid !==
       ValidPositionType.INVALID
@@ -80,63 +80,67 @@ export default class King extends BasePiece {
     }
 
     if (!this.hasMoved) {
-      validPositionCollection[this.row][this.column - 2].isValid = CASTLE_LEFT;
-      validPositionCollection[this.row][this.column + 2].isValid = CASTLE_RIGHT;
+      if (validPositionCollection[this.row]?.[this.column - 2]) {
+        validPositionCollection[this.row][this.column - 2].isValid =
+          CASTLE_LEFT;
+      }
+      if (validPositionCollection[this.row]?.[this.column + 2]) {
+        validPositionCollection[this.row][this.column + 2].isValid =
+          CASTLE_RIGHT;
+      }
     }
     const validMove =
       validPositionCollection[targetRow]?.[targetColumn] ?? null;
     if (!validMove) {
       throw new Error(`Invalid move for king`);
     }
-    if (
-      typeof validMove === "string" &&
-      VALID_CASTLES.includes(validMove as CastleDirection)
-    ) {
-      let possibleRook: BasePiece | null = null;
-      let errorMessage = "No rook found";
-      let column = 0;
-      let columnsEmptyCheck: Array<number> = [];
-      let columnAdjustment = 0;
-      CastleDirection.LEFT ? 3 : -2;
-      if (validMove === CastleDirection.LEFT) {
-        column = this.column - 4;
-        columnsEmptyCheck = [this.column - 3, this.column - 2, this.column - 1];
-        possibleRook =
-          (cellCollection[this.row][column].playerPiece as BasePiece) ?? null;
-        columnAdjustment = 3;
-        errorMessage = "No valid rook found for left castle";
-      } else if (validMove === CastleDirection.RIGHT) {
-        column = this.column + 3;
-        columnsEmptyCheck = [this.column + 1, this.column + 2];
-        possibleRook =
-          (cellCollection[this.row][column].playerPiece as BasePiece) ?? null;
-        columnAdjustment = -2;
-        errorMessage = "No valid rook found for right castle";
-      }
-      const rook = possibleRook as Rook;
-      if (
-        !rook ||
-        rook.type !== PIECE_TYPES.ROOK ||
-        rook.playerIndex !== this.playerIndex ||
-        rook.hasMoved
-      ) {
-        throw new Error(errorMessage);
-      }
-
-      for (const column of columnsEmptyCheck) {
-        if (cellCollection[this.row][column].playerPiece) {
-          throw new Error(
-            "There are one or more pieces between the King and the Rook"
-          );
-        }
-      }
-
-      this.performCastle = {
-        row: this.row,
-        column,
-        columnAdjustment,
-      };
+    const direction = validMove.isValid as CastleDirection;
+    if (typeof direction !== "string" || !VALID_CASTLES.includes(direction)) {
+      return false;
     }
+    let possibleRook: BasePiece | null = null;
+    let errorMessage = "No rook found";
+    let column = 0;
+    let columnsEmptyCheck: Array<number> = [];
+    let columnAdjustment = 0;
+    CastleDirection.LEFT ? 3 : -2;
+    if (direction === CastleDirection.LEFT) {
+      column = this.column - 4;
+      columnsEmptyCheck = [this.column - 3, this.column - 2, this.column - 1];
+      possibleRook =
+        (cellCollection[this.row][column].playerPiece as BasePiece) ?? null;
+      columnAdjustment = 3;
+      errorMessage = "No valid rook found for left castle";
+    } else if (direction === CastleDirection.RIGHT) {
+      column = this.column + 3;
+      columnsEmptyCheck = [this.column + 1, this.column + 2];
+      possibleRook =
+        (cellCollection[this.row][column].playerPiece as BasePiece) ?? null;
+      columnAdjustment = -2;
+      errorMessage = "No valid rook found for right castle";
+    }
+    const rook = possibleRook as Rook;
+    if (
+      !rook ||
+      rook.type !== PIECE_TYPES.ROOK ||
+      rook.playerIndex !== this.playerIndex ||
+      rook.hasMoved
+    ) {
+      throw new Error(errorMessage);
+    }
+
+    for (const column of columnsEmptyCheck) {
+      if (cellCollection[this.row][column].playerPiece) {
+        throw new Error(
+          "There are one or more pieces between the King and the Rook"
+        );
+      }
+    }
+    this.performCastle = {
+      row: this.row,
+      column,
+      columnAdjustment,
+    };
     return true;
   }
 }

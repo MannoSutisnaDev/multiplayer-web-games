@@ -92,10 +92,8 @@ export default class ChessGame extends BaseGameModel<
   }
 
   placeAllPieces(cellCollection: CellCollection<ChessPiece>) {
-    // checkScenario1(this);
-    knightQueenScenario(this);
-    // this.placePlayerOnePieces(cellCollection);
-    // this.placePlayerTwoPieces(cellCollection);
+    this.placePlayerOnePieces(cellCollection);
+    this.placePlayerTwoPieces(cellCollection);
   }
 
   placePlayerOnePieces(cellCollection: CellCollection<ChessPiece>) {
@@ -115,6 +113,17 @@ export default class ChessGame extends BaseGameModel<
     for (const pieces of playerPiecesCollection) {
       let columnIndex = 0;
       for (const pieceType of pieces) {
+        // if (
+        //   ![
+        //     PIECE_TYPES.KING,
+        //     PIECE_TYPES.ROOK,
+        //     PIECE_TYPES.QUEEN,
+        //     PIECE_TYPES.BISHOP,
+        //   ].includes(pieceType)
+        // ) {
+        //   columnIndex++;
+        //   continue;
+        // }
         cellCollection[rowIndex][columnIndex].playerPiece = PieceBuilder(
           pieceType,
           rowIndex,
@@ -305,12 +314,16 @@ export default class ChessGame extends BaseGameModel<
 
       const convertedPiece = piece as BasePiece;
 
+      console.log("BEFORE VALIDATE!");
+
       const validMove = convertedPiece.validateMove(targetRow, targetColumn);
       if (!validMove) {
         throw new Error(
           `This move is not valid for piece: '${convertedPiece.getType()}'`
         );
       }
+
+      console.log({ validMove });
 
       if (cell.playerPiece.type !== PIECE_TYPES.KING) {
         if (
@@ -393,11 +406,6 @@ export default class ChessGame extends BaseGameModel<
       returnToLobbyTime: 60,
     };
     this.scheduleDeleteGameOver(this.gameOver.returnToLobbyTime);
-
-    // this.gameOver = currentPlayerState === PlayerState.CheckMate;
-    // if (this.gameOver) {
-    //   this.playerThatWon = this.currentPlayerIndex;
-    // }
   }
 
   getPlayerIndexViaSocket(socket: SocketServerSide): number {

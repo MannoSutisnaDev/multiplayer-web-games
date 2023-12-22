@@ -73,6 +73,17 @@ export default function TwoPlayerTurnBasedWrapper<
         >
           Leave game
         </button>
+        <button
+          className="reset-button"
+          onClick={() => {
+            props?.resetFunction?.();
+          }}
+          onTouchStart={() => {
+            props?.resetFunction?.();
+          }}
+        >
+          Reset
+        </button>
       </div>
     );
 
@@ -98,9 +109,6 @@ export default function TwoPlayerTurnBasedWrapper<
           subContent={footer}
         />
         <div className="main-wrapper">
-          {/* <button className="reset-button" onClick={props.resetFunction}>
-            Reset
-          </button> */}
           <div className="header"></div>
           {!isLoaded ? (
             <>

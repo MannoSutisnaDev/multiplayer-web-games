@@ -174,11 +174,6 @@
         }
       }
     }
-    tbody {
-      min-height: 300px;
-      max-height: 400px;
-      overflow-y: auto;
-    }
 
     .empty {
       padding-top: 1rem;
@@ -199,6 +194,7 @@
     }
 
     tbody {
+      min-height: 300px;
       overflow-y: scroll;
       overflow-x: auto;
       td {
@@ -269,6 +265,20 @@
   }
 }
 
+@media (max-height: 500px) {
+  .waiting-room-body {
+    margin-top: initial;
+  }
+  .lobbies-body {
+    .lobbies-table {
+      tbody {
+        min-height: 150px;
+        max-height: 150px;
+      }
+    }
+  }
+}
+
 @media (max-width: #{$lobbies-mobile-cutoff}) {
   .lobbies-body {
     .lobbies-table {
@@ -285,7 +295,6 @@
 
       tbody {
         display: block;
-        min-height: 200px;
         max-height: 500px;
         width: 100%;
         div.options {

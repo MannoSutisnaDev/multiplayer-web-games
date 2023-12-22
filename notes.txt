@@ -406,3 +406,9 @@ bright purple
 
 dark purple
 #400040
+
+
+To test (after checkmate)
+  7,0 king
+
+  5,2 queen (move to 5,1)

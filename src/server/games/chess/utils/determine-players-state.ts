@@ -34,7 +34,7 @@ export const determinePlayerState = (
   ) {
     state = PlayerState.Check;
   }
-  if (state === PlayerState.Check && determineCheckMate(game, playerIndex)) {
+  if (determineCheckMate(game, playerIndex)) {
     state = PlayerState.CheckMate;
   }
   return state;

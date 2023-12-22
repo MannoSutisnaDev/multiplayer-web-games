@@ -77,18 +77,22 @@ export default abstract class BasePiece
 
     let moveType = validPositionCollection[targetRow]?.[targetColumn] ?? null;
 
-    if (moveType) {
-      const convertedMoveType = moveType.isValid as ValidPositionType;
-      if (!VALID_MOVES.includes(convertedMoveType)) {
-        throw new Error(`Invalid move for ${this.type}`);
-      }
-    }
-
-    if (!this.validateMoveSpecific(targetRow, targetColumn)) {
+    if (!moveType) {
       return false;
     }
 
-    return true;
+    const convertedMoveType = moveType.isValid as ValidPositionType;
+
+    const regularValidation = VALID_MOVES.includes(convertedMoveType);
+    if (regularValidation && this.type !== PIECE_TYPES.KING) {
+      this.validateMoveSpecific(targetRow, targetColumn);
+    }
+
+    const kingSpecialValidation =
+      this.type === PIECE_TYPES.KING &&
+      this.validateMoveSpecific(targetRow, targetColumn);
+
+    return regularValidation || kingSpecialValidation;
   }
 
   abstract setValidPositions(

@@ -38,19 +38,6 @@ export default class Rook extends BasePiece {
   }
 
   validateMoveSpecific(targetRow: number, targetColumn: number) {
-    const game = this.fetchGame();
-    let validPositionCollection = generateValidPositionCollection(game.cells);
-    validPositionCollection = setValidOrthogonalCells(
-      this,
-      validPositionCollection,
-      game.cells,
-      true
-    );
-    const validMove =
-      validPositionCollection[targetRow]?.[targetColumn] ?? null;
-    if (!validMove) {
-      throw new Error(`Invalid move for rook`);
-    }
     return true;
   }
 }

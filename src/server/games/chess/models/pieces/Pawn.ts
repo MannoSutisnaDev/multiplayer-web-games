@@ -1,5 +1,6 @@
 import BasePiece from "@/server/games/chess/models/pieces/BasePiece";
 import { FetchGame, ValidPositionCollection } from "@/server/games/chess/types";
+import { printValidPositionsCollection } from "@/server/games/chess/utils/general";
 import { setValidPawnMoveCells } from "@/server/games/chess/utils/position-validation";
 import { PIECE_TYPES } from "@/shared/types/socket-communication/games/chess";
 import {
@@ -58,7 +59,6 @@ export default class Pawn extends BasePiece {
     } else if (player.direction === PiecesDirection.UP && targetRow === 0) {
       this.hasReachedEndOfBoard = true;
     }
-    this.hasMoved = true;
     return true;
   }
 
