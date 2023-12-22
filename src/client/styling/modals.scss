@@ -71,13 +71,26 @@
 .interrupting-message {
   display: flex;
   flex-direction: column;
-  justify-content: center;
+  justify-content: space-between;
   align-items: center;
+  width: 100vw;
+  height: 100vh;
+  h1 {
+    text-align: center;
+  }
   .message-content {
     display: flex;
     align-items: center;
     justify-content: center;
     text-align: center;
     white-space: pre-line;
+  }
+  .sub-content {
+    width: 100%;
+  }
+  .footer {
+    padding: 20px;
+    display: flex;
+    justify-content: flex-end;
   }
 }

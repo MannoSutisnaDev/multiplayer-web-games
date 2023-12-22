@@ -18,7 +18,10 @@ import {
   determinePlayerState,
 } from "@/server/games/chess/utils/determine-players-state";
 import { PieceBuilder } from "@/server/games/chess/utils/general";
-import { checkScenario1 } from "@/server/games/chess/utils/place-pieces";
+import {
+  checkScenario1,
+  knightQueenScenario,
+} from "@/server/games/chess/utils/place-pieces";
 import {
   ChessGameDataInterface,
   ChessGameInterface,
@@ -90,8 +93,9 @@ export default class ChessGame extends BaseGameModel<
 
   placeAllPieces(cellCollection: CellCollection<ChessPiece>) {
     // checkScenario1(this);
-    this.placePlayerOnePieces(cellCollection);
-    this.placePlayerTwoPieces(cellCollection);
+    knightQueenScenario(this);
+    // this.placePlayerOnePieces(cellCollection);
+    // this.placePlayerTwoPieces(cellCollection);
   }
 
   placePlayerOnePieces(cellCollection: CellCollection<ChessPiece>) {

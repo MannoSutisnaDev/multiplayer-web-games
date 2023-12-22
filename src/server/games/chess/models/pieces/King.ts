@@ -1,6 +1,10 @@
 import BasePiece from "@/server/games/chess/models/pieces/BasePiece";
 import type Rook from "@/server/games/chess/models/pieces/Rook";
-import { FetchGame, ValidPositionCollection } from "@/server/games/chess/types";
+import {
+  FetchGame,
+  ValidPositionCollection,
+  ValidPositionType,
+} from "@/server/games/chess/types";
 import {
   generateValidPositionCollection,
   setValidDiagonalCells,
@@ -65,7 +69,11 @@ export default class King extends BasePiece {
     const validMovesPreviousPlayer = game.getAllValidMovesForPlayer(
       game.getPreviousPlayerIndex()
     );
-    if (validMovesPreviousPlayer[targetRow][targetColumn]) {
+    console.log({ result: validMovesPreviousPlayer[targetRow][targetColumn] });
+    if (
+      validMovesPreviousPlayer[targetRow][targetColumn].isValid !==
+      ValidPositionType.INVALID
+    ) {
       throw new Error(
         `This is not a possible move because it will get you checked.`
       );

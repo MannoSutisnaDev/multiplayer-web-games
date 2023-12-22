@@ -90,8 +90,9 @@ export default function Chess() {
         };
         return <Piece {...data} />;
       }}
-      leaveFunction={() => {
+      leaveFunction={(showConfirm: boolean) => {
         if (
+          showConfirm &&
           !confirm(
             "Are you sure want to leave this game? The game will be deleted."
           )

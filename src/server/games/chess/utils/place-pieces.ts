@@ -3,6 +3,40 @@ import { PIECE_TYPES } from "@/shared/types/socket-communication/games/chess";
 
 import { PieceBuilder } from "./general";
 
+export const knightQueenScenario = (game: ChessGame) => {
+  game.cells[0][0].playerPiece = PieceBuilder(
+    PIECE_TYPES.KING,
+    0,
+    0,
+    1,
+    game.generateFetchGameFunction()
+  );
+
+  game.cells[3][1].playerPiece = PieceBuilder(
+    PIECE_TYPES.QUEEN,
+    3,
+    1,
+    1,
+    game.generateFetchGameFunction()
+  );
+
+  game.cells[6][5].playerPiece = PieceBuilder(
+    PIECE_TYPES.KNIGHT,
+    6,
+    5,
+    1,
+    game.generateFetchGameFunction()
+  );
+
+  game.cells[7][3].playerPiece = PieceBuilder(
+    PIECE_TYPES.KING,
+    7,
+    3,
+    0,
+    game.generateFetchGameFunction()
+  );
+};
+
 export const inTheWayScenario = (game: ChessGame) => {
   game.cells[0][0].playerPiece = PieceBuilder(
     PIECE_TYPES.KING,

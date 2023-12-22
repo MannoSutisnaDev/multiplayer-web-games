@@ -60,6 +60,22 @@ export default function TwoPlayerTurnBasedWrapper<
       bottomPlayerName = players[1].name;
     }
 
+    const footer = (
+      <div className="footer">
+        <button
+          className="leave-button"
+          onClick={() => {
+            props?.leaveFunction?.(!interruptingMessage);
+          }}
+          onTouchStart={() => {
+            props?.leaveFunction?.(!interruptingMessage);
+          }}
+        >
+          Leave game
+        </button>
+      </div>
+    );
+
     return (
       <TwoPlayerTurnBasedContext.Provider
         value={{
@@ -79,6 +95,7 @@ export default function TwoPlayerTurnBasedWrapper<
           show={!!interruptingMessage}
           title={interruptingMessage?.title ?? ""}
           message={interruptingMessage?.message ?? ""}
+          subContent={footer}
         />
         <div className="main-wrapper">
           {/* <button className="reset-button" onClick={props.resetFunction}>
@@ -105,15 +122,7 @@ export default function TwoPlayerTurnBasedWrapper<
               </div>
             </div>
           )}
-          <div className="footer">
-            <button
-              className="leave-button"
-              onClick={props?.leaveFunction}
-              onTouchStart={props?.leaveFunction}
-            >
-              Leave game
-            </button>
-          </div>
+          {!interruptingMessage && footer}
         </div>
       </TwoPlayerTurnBasedContext.Provider>
     );

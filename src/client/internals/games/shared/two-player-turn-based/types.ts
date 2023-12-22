@@ -4,7 +4,7 @@ import { InterruptingMessage } from "@/server/games/types";
 import { BasePlayerModelInterface } from "@/shared/types/socket-communication/games/game-types";
 
 export interface TwoPlayerTurnBasedProps {
-  leaveFunction: () => void;
+  leaveFunction: (confirm: boolean) => void;
   resetFunction?: () => void;
 }
 
