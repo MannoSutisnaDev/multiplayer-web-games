@@ -314,16 +314,12 @@ export default class ChessGame extends BaseGameModel<
 
       const convertedPiece = piece as BasePiece;
 
-      console.log("BEFORE VALIDATE!");
-
       const validMove = convertedPiece.validateMove(targetRow, targetColumn);
       if (!validMove) {
         throw new Error(
           `This move is not valid for piece: '${convertedPiece.getType()}'`
         );
       }
-
-      console.log({ validMove });
 
       if (cell.playerPiece.type !== PIECE_TYPES.KING) {
         if (

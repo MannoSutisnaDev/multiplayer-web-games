@@ -73,18 +73,18 @@ export default function Lobbies() {
 
   const lobbiesData: LobbyData[] = [];
   for (const lobby of lobbies) {
-    const { name, GameType, Users } = lobby;
+    const { name, GameType, Players } = lobby;
     const lobbyData: LobbyData = {
       lobby: name,
       game: GameType.name,
-      players: `${Users.length ?? 0} / ${GameType.maxPlayers}`,
+      players: `${Players.length ?? 0} / ${GameType.maxPlayers}`,
       spectators: "0 / 0",
       join: (
         <button
           className="btn"
           disabled={
             lobby.gameStarted ||
-            lobby.Users.length === lobby.GameType.maxPlayers
+            lobby.Players.length === lobby.GameType.maxPlayers
           }
           onClick={() => joinLobby(lobby.id)}
         >

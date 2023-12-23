@@ -46,9 +46,11 @@ export default function Lobby() {
     };
   }, [addErrorMessage]);
 
-  const playerSelf = lobby?.Users?.find?.((player) => player.id === sessionId);
+  const playerSelf = lobby?.Players?.find?.(
+    (player) => player.userId === sessionId
+  );
 
-  const playerIsOwner = playerSelf?.LobbyItOwns?.id === lobbyId;
+  const playerIsOwner = playerSelf?.User?.LobbyItOwns?.id === lobbyId;
 
   const title = lobby
     ? `Lobby "${lobby?.name}" | Game "${lobby.GameType.name}"`
@@ -61,11 +63,11 @@ export default function Lobby() {
   };
 
   let extraClasses = [];
-  const players = lobby?.Users ?? [];
+  const players = lobby?.Players ?? [];
   for (let i = 0; i < players.length; i++) {
     const player = players[i];
     extraClasses.push([
-      sessionId === player.id ? "player-self" : null,
+      sessionId === player.userId ? "player-self" : null,
       null,
       null,
     ]);
@@ -78,20 +80,20 @@ export default function Lobby() {
     }[] = [
       {
         label: "Make user owner",
-        function: () => socket.emit("SetNewOwner", { userId: player.id }),
+        function: () => socket.emit("SetNewOwner", { userId: player.userId }),
       },
       {
         label: "Kick user",
-        function: () => socket.emit("KickUser", { userId: player.id }),
+        function: () => socket.emit("KickUser", { userId: player.userId }),
       },
     ];
 
     return {
-      name: player.username,
+      name: player.User.username,
       status: player.ready ? "Ready" : "Not ready",
       options: (
         <div className="options options-content">
-          {playerIsOwner && player.id !== sessionId && (
+          {playerIsOwner && player.userId !== sessionId && (
             <ThreeDotsMenu options={options} />
           )}
         </div>

@@ -412,3 +412,8 @@ To test (after checkmate)
   7,0 king
 
   5,2 queen (move to 5,1)
+
+
+Filter model connected to junction table
+https://www.prisma.io/docs/orm/prisma-client/queries/relation-queries#filter-on--to-one-relations
+

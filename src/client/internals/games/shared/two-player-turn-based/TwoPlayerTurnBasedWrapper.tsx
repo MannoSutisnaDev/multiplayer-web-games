@@ -73,7 +73,7 @@ export default function TwoPlayerTurnBasedWrapper<
         >
           Leave game
         </button>
-        <button
+        {/* <button
           className="reset-button"
           onClick={() => {
             props?.resetFunction?.();
@@ -83,7 +83,7 @@ export default function TwoPlayerTurnBasedWrapper<
           }}
         >
           Reset
-        </button>
+        </button> */}
       </div>
     );
 
@@ -118,7 +118,7 @@ export default function TwoPlayerTurnBasedWrapper<
               </div>
             </>
           ) : (
-            <div className="main">
+            <div className={`main spectating`}>
               <div className="game-container">
                 <div className="player-label-container">
                   <div className={topPlayerClass}>{topPlayerName}</div>

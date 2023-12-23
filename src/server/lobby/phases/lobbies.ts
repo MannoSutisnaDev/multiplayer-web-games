@@ -65,15 +65,13 @@ const createLobby = (
         name: lobbyName,
         gameTypeId: gameTypeEntry.id,
         gameStarted: false,
-        lobbyOwnerId: user.id,
+        ownerId: user.id,
       },
     });
-    await prisma.user.update({
-      where: {
-        id: user.id,
-      },
+    await prisma.gamePlayer.create({
       data: {
-        joinedLobbyId: lobby.id,
+        lobbyId: lobby.id,
+        userId: user.id,
       },
     });
     setPhase(socket, PhaseLobby);
@@ -99,14 +97,22 @@ const joinLobby = (
       });
       return;
     }
+
     const lobby = await prisma.lobby.findFirst({
       where: {
         id: lobbyId,
       },
       include: {
-        GameType: {},
-        Users: {
-          where: { connected: true },
+        GameType: true,
+        Players: {
+          where: {
+            User: {
+              connected: true,
+            },
+          },
+          include: {
+            User: true,
+          },
         },
       },
     });
@@ -116,24 +122,32 @@ const joinLobby = (
       });
       return;
     }
-    if (lobby.Users.find((player) => player.id === user.id)) {
+    if (lobby.Players.find((player) => player.userId === user.id)) {
       socket.emit("GenericResponseError", {
         error: "You're already in this lobby.",
       });
       return;
     }
-    if (lobby.Users.length + 1 > lobby.GameType.maxPlayers) {
+    if (lobby.Players.length + 1 > lobby.GameType.maxPlayers) {
       socket.emit("GenericResponseError", {
         error: "Lobby is full.",
       });
       return;
     }
-    await prisma.user.update({
+    await prisma.gamePlayer.upsert({
       where: {
-        id: user.id,
+        userId: user.id,
       },
-      data: {
-        joinedLobbyId: lobby.id,
+      create: {
+        userId: user.id,
+        lobbyId: lobby.id,
+        ready: false,
+        spectator: false,
+      },
+      update: {
+        lobbyId: lobby.id,
+        ready: false,
+        spectator: false,
       },
     });
     setPhase(socket, PhaseLobby);

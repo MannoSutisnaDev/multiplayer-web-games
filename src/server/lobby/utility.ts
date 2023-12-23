@@ -19,6 +19,7 @@ import { SocketServerSide } from "@/server/types";
 import { GameTypes } from "@/shared/types/socket-communication/general";
 import {
   LobbyWithGameType,
+  UserWithGamePlayer,
   UserWithLobbyItOwns,
 } from "@/shared/types/socket-communication/types";
 
@@ -28,20 +29,28 @@ export const DeleteAfterSeconds = 60 * 10;
 
 export const findUser = async (
   socket: SocketServerSide
-): Promise<User | null> => {
+): Promise<UserWithGamePlayer | null> => {
   const sessionId = socket?.data?.sessionId;
   const user = await prisma.user.findFirst({
     where: {
       id: { equals: sessionId },
     },
+    include: {
+      GamePlayer: true,
+    },
   });
   return user;
 };
 
-export const findUserById = async (userId: string): Promise<User | null> => {
+export const findUserById = async (
+  userId: string
+): Promise<UserWithGamePlayer | null> => {
   const user = await prisma.user.findFirst({
     where: {
       id: { equals: userId },
+    },
+    include: {
+      GamePlayer: true,
     },
   });
   return user;
@@ -56,6 +65,7 @@ export const findUserWithLobbyItOwns = async (
       id: { equals: sessionId },
     },
     include: {
+      GamePlayer: {},
       LobbyItOwns: {},
     },
   });
@@ -91,8 +101,8 @@ export const updateUserData = async (socket: SocketServerSide) => {
     return;
   }
   let lobby: LobbyWithGameType | null = null;
-  if (user.joinedLobbyId) {
-    lobby = await findLobby(user.joinedLobbyId);
+  if (user.GamePlayer) {
+    lobby = await findLobby(user.GamePlayer.lobbyId);
   }
   socket.data.sessionId = sessionId;
   if (!lobby) {
@@ -124,10 +134,18 @@ export const sendUpdatedLobbies = async () => {
   const lobbies = await prisma.lobby.findMany({
     include: {
       GameType: {},
-      Users: {
-        where: { connected: true },
+      Players: {
+        where: {
+          User: {
+            connected: true,
+          },
+        },
         include: {
-          LobbyItOwns: {},
+          User: {
+            include: {
+              LobbyItOwns: true,
+            },
+          },
         },
       },
     },
@@ -146,9 +164,13 @@ export const sendUpdatedLobbiesToPlayer = async (socket: SocketServerSide) => {
   const lobbies = await prisma.lobby.findMany({
     include: {
       GameType: {},
-      Users: {
+      Players: {
         include: {
-          LobbyItOwns: {},
+          User: {
+            include: {
+              LobbyItOwns: true,
+            },
+          },
         },
       },
     },
@@ -195,10 +217,18 @@ const createLobbyPayload = async (lobbyId: string) => {
     },
     include: {
       GameType: {},
-      Users: {
-        where: { connected: true },
+      Players: {
+        where: {
+          User: {
+            connected: true,
+          },
+        },
         include: {
-          LobbyItOwns: {},
+          User: {
+            include: {
+              LobbyItOwns: true,
+            },
+          },
         },
       },
     },
@@ -206,9 +236,9 @@ const createLobbyPayload = async (lobbyId: string) => {
   if (!lobby) {
     return null;
   }
-  lobby.Users?.sort?.((a, b) => {
-    const aValue = a?.LobbyItOwns ? 1 : 0;
-    const bValue = b?.LobbyItOwns ? 1 : 0;
+  lobby.Players?.sort?.((a, b) => {
+    const aValue = a?.User.LobbyItOwns ? 1 : 0;
+    const bValue = b?.User.LobbyItOwns ? 1 : 0;
     if (aValue > bValue) {
       return -1;
     } else if (aValue < bValue) {
@@ -221,10 +251,10 @@ const createLobbyPayload = async (lobbyId: string) => {
 
 export const sendUpdateLobbyToPlayer = async (socket: SocketServerSide) => {
   const user = await findUser(socket);
-  if (!user || !user.joinedLobbyId) {
+  if (!user || !user.GamePlayer) {
     return;
   }
-  const lobbyPayload = await createLobbyPayload(user.joinedLobbyId);
+  const lobbyPayload = await createLobbyPayload(user.GamePlayer.lobbyId);
   if (!lobbyPayload) {
     return;
   }
@@ -240,8 +270,8 @@ export const sendUpdatedLobby = async (lobbyId: string | null) => {
   if (!lobbyPayload) {
     return;
   }
-  for (const user of lobbyPayload.Users) {
-    const socket = indexedSockets[user.id];
+  for (const player of lobbyPayload.Players) {
+    const socket = indexedSockets[player.userId];
     if (!socket) {
       continue;
     }
@@ -262,9 +292,13 @@ const handleConnectionChange = async (
       id: { equals: sessionId },
     },
     include: {
-      JoinedLobby: {
+      GamePlayer: {
         include: {
-          GameType: {},
+          Lobby: {
+            include: {
+              GameType: true,
+            },
+          },
         },
       },
     },
@@ -276,7 +310,7 @@ const handleConnectionChange = async (
     where: { id: user.id },
     data: { connected },
   });
-  const joinedLobby = user.JoinedLobby;
+  const joinedLobby = user.GamePlayer?.Lobby;
   if (!joinedLobby) {
     return;
   }
@@ -318,7 +352,11 @@ export const deleteLobby = async (lobbyId: string) => {
   const lobby = await prisma.lobby.findFirst({
     where: { id: lobbyId },
     include: {
-      Users: {},
+      Players: {
+        include: {
+          User: true,
+        },
+      },
       GameState: {},
       GameType: {},
     },
@@ -326,17 +364,12 @@ export const deleteLobby = async (lobbyId: string) => {
   if (!lobby) {
     return;
   }
-  const userIds = lobby.Users.map((user) => user.id);
+  const userIds = lobby.Players.map((player) => player.userId);
   if (userIds.length > 0) {
-    await prisma.user.updateMany({
-      where: { id: { in: userIds } },
-      data: { joinedLobbyId: null, ready: false },
+    await prisma.gamePlayer.deleteMany({
+      where: { userId: { in: userIds }, lobbyId: lobby.id },
     });
   }
-  await prisma.lobby.update({
-    where: { id: lobby.id },
-    data: { lobbyOwnerId: null },
-  });
   try {
     const game = findGameBasedOnLobby(lobby);
     if (game) {
@@ -365,7 +398,7 @@ export const deleteLobby = async (lobbyId: string) => {
 };
 
 export const leaveLobby = async (data: SocketServerSide | string) => {
-  let user: User | null;
+  let user: UserWithGamePlayer | null;
   if (typeof data === "string") {
     user = await findUserById(data);
   } else {
@@ -374,29 +407,31 @@ export const leaveLobby = async (data: SocketServerSide | string) => {
   if (!user) {
     return;
   }
-  const lobbyId = user.joinedLobbyId;
+  const lobbyId = user.GamePlayer?.lobbyId;
   if (!lobbyId) {
     return;
   }
-  await prisma.user.update({
-    where: { id: user.id },
-    data: { joinedLobbyId: null, ready: false },
+  await prisma.gamePlayer.delete({
+    where: { userId: user.id, lobbyId },
   });
   let lobby = await prisma.lobby.findFirst({
     where: { id: lobbyId },
     include: {
-      Users: {
-        where: { connected: true },
+      Players: {
+        where: {
+          User: {
+            connected: true,
+          },
+        },
+        include: {
+          User: true,
+        },
       },
     },
   });
   if (!lobby) {
     return;
   }
-  await prisma.user.update({
-    where: { id: user.id },
-    data: { ready: false, joinedLobbyId: null },
-  });
   const game = chessRepository.findOne(lobby.id);
   if (game) {
     game.leaveGame(user.id);
@@ -408,23 +443,34 @@ export const leaveLobby = async (data: SocketServerSide | string) => {
   lobby = await prisma.lobby.findFirst({
     where: { id: lobbyId },
     include: {
-      Users: {
-        where: { connected: true },
+      Players: {
+        where: {
+          User: {
+            connected: true,
+          },
+        },
+        include: {
+          User: true,
+        },
       },
     },
   });
   if (!lobby) {
     return;
   }
-  if (lobby.Users.length === 0) {
+  if (lobby.Players.length === 0) {
     deleteLobby(lobby.id);
     return;
-  } else if (lobby?.lobbyOwnerId === user.id) {
-    const player = lobby.Users[0];
-    const ownerId = player ? player.id : null;
+  } else if (lobby?.ownerId === user.id) {
+    const player = lobby.Players[0];
+    const ownerId = player ? player.userId : null;
+    if (!ownerId) {
+      deleteLobby(lobby.id);
+      return;
+    }
     await prisma.lobby.update({
       where: { id: lobbyId },
-      data: { lobbyOwnerId: ownerId },
+      data: { ownerId },
     });
     sendUpdatedLobbies();
     sendUpdatedLobby(lobbyId);
@@ -459,19 +505,21 @@ export const guardUserConnect = async (
   }
   const user = await prisma.user.findFirst({
     where: { id: sessionId },
+    include: {
+      GamePlayer: true,
+    },
   });
   if (!user) {
     sendBackToEnterUsername();
     return false;
   }
-  if (!user.joinedLobbyId) {
+  if (!user.GamePlayer?.lobbyId) {
     return true;
   }
   const sendBackToLobbiesAndConnectUser = async (message: string) => {
     setPhase(socket, PhaseLobbies);
-    await prisma.user.update({
-      where: { id: user.id },
-      data: { joinedLobbyId: null, ready: false, connected: true },
+    await prisma.gamePlayer.delete({
+      where: { userId: user.id },
     });
     socket.data.sessionId = sessionId;
     socket.emit("UpdateUserData", {
@@ -484,14 +532,14 @@ export const guardUserConnect = async (
     sendUpdatedLobbies();
   };
   const lobby = await prisma.lobby.findFirst({
-    where: { id: user.joinedLobbyId },
-    include: { GameType: {}, Users: {} },
+    where: { id: user.GamePlayer.lobbyId },
+    include: { GameType: {}, Players: { include: { User: true } } },
   });
   if (!lobby) {
     return true;
   }
-  const players = lobby.Users.filter(
-    (player) => player.connected && player.id !== sessionId
+  const players = lobby.Players.filter(
+    (player) => player.User.connected && player.User.id !== sessionId
   );
 
   if (players.length >= lobby.GameType.maxPlayers) {
@@ -541,7 +589,7 @@ export const deleteGameAndReturnToLobby = async (lobbyId: string) => {
   const lobby = await prisma.lobby.findFirst({
     where: { id: lobbyId },
     include: {
-      Users: {},
+      Players: {},
       GameState: {},
       GameType: {},
     },
@@ -553,10 +601,10 @@ export const deleteGameAndReturnToLobby = async (lobbyId: string) => {
   if (game) {
     game.destroy();
   }
-  const userIds = lobby.Users.map((user) => user.id);
+  const userIds = lobby.Players.map((player) => player.userId);
   if (userIds.length > 0) {
-    await prisma.user.updateMany({
-      where: { id: { in: userIds } },
+    await prisma.gamePlayer.updateMany({
+      where: { userId: { in: userIds } },
       data: { ready: false },
     });
   }
@@ -608,7 +656,12 @@ const determineEntriesToDeleteWithNoActivity = (
 
 const cleanUpUsersNoActivity = async () => {
   const users = await prisma.user.findMany({
-    where: { joinedLobbyId: null, connected: false },
+    where: {
+      GamePlayer: {
+        is: null,
+      },
+      connected: false,
+    },
   });
   const usersToDelete = determineEntriesToDeleteWithNoActivity(users) as User[];
   const userIds = usersToDelete.map((user) => user.id);
@@ -642,12 +695,12 @@ const cleanUpLobbiesNoActivity = async () => {
 
 const cleanUpLobbiesIncorrectOwner = async () => {
   const lobbies = await prisma.lobby.findMany({
-    include: { Users: {} },
+    include: { Players: {} },
   });
   const lobbyIdsToDelete: string[] = [];
   for (const lobby of lobbies) {
-    const correctOwner = lobby.Users.find(
-      (user) => user.id === lobby.lobbyOwnerId
+    const correctOwner = lobby.Players.find(
+      (player) => player.userId === lobby.ownerId
     );
     if (correctOwner) {
       continue;

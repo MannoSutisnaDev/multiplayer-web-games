@@ -21,9 +21,12 @@ export const routeGuard = async (req: Request) => {
     where: {
       id: sessionId,
     },
+    include: {
+      GamePlayer: true,
+    },
   });
-  if (user?.joinedLobbyId) {
-    req.url = `/lobbies/${user.joinedLobbyId}`;
+  if (user?.GamePlayer?.lobbyId) {
+    req.url = `/lobbies/${user.GamePlayer.lobbyId}`;
   } else if (user) {
     req.url = "/lobbies";
   } else {
