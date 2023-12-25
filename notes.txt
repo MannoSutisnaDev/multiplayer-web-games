@@ -274,3 +274,141 @@ Create other games
 
 
 
+Prisma reset DB:
+
+npx prisma db push --force-reset && npx prisma db seed
+
+
+Schaken maken
+Liegen maken
+
+Alle drie de games responsive maken (locked screen size)
+Spectator mode
+Replay mode + login + statistics + Oauth login
+Lobby chats
+Invitation system
+Private lobbies
+DM's
+
+PostqreSQL op live server
+
+Home page aanpassen
+Introductie 
+Page transitions
+
+React suspense to load games individually
+
+Reveal animations implementeren op mijn portfolio website
+
+
+Connect four 
+Tic tac toe (complex)
+Backgammon
+Yahtzee
+
+Poker (variants)
+
+
+
+Abstractie maken voor spel
+
+Leave game
+Interrupting message
+
+Spectators 
+Chat
+
+
+
+
+Abstractie maken voor schaakbord
+
+bord
+bord tonen en stukken tonen op het bord
+bewegen van stukken
+laten zien waar je een nieuwe stuk mag neerzetten
+zodra een stuk wordt geplaatst neerzetten en een bericht naar de server sturen
+renderen van stukken
+
+
+
+
+Notes:
+- Responsive design maken voor hele game
+- Spectator mode
+- Bij interrupting messages wel de game kunnen leaven
+- Liegen maken
+- Zweeds pesten maken
+- Categoriën maken
+- Ranking maken
+  - games terug kunnen kijken
+  - zien hoeveel games je hebt gewonnen / verloren
+  - inlogsysteem
+  - login with google
+
+- 4 op een rij
+- boter kaas en eieren advanced
+- Pokeren maken
+
+- Chat systeem
+
+- Private lobbies
+- Invites sturen
+
+- Postgresql databaseon live environment
+
+- Next JS code splitting, conditionally de games inladen
+
+- Intro animation 
+- Page transitions
+
+
+- Pong
+- Tetris
+- Multiplayer snake
+- Multiplayer pac man
+- Geometry dash multiplayer
+- Tanks (crash bash inspired)
+- 3D puzzle game
+
+
+Scrollable table body
+https://codereview.stackexchange.com/questions/160979/fixed-table-header-with-scrollable-body-and-aligning-columns
+
+Liquid drum n base mix:
+https://www.youtube.com/watch?v=epwG5nEHbYg
+
+Vibey house mix:
+https://www.youtube.com/watch?v=Rzim9iLFdrY
+
+
+
+
+Responsive tables overzetten
+
+Modal responsive maken
+
+Chess en Checkers responsive maken
+
+Spectator mode maken
+
+
+
+To test
+  Black
+  7,3 king
+  White
+  6,5 knight
+  3,1 queen
+
+bright purple
+#800080
+
+dark purple
+#400040
+
+
+To test (after checkmate)
+  7,0 king
+
+  5,2 queen (move to 5,1)

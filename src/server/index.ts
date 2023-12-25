@@ -9,22 +9,23 @@ import {
   setAllUsersToDisconnected,
 } from "@/server/lobby/utility";
 import { SocketServerSide } from "@/server/types";
-import { routeGuard } from "@/server/utils";
 import { Disconnect } from "@/shared/types/socket-communication/lobby/general";
 
-const port = parseInt(process.env.PORT || "3000", 10);
-const dev: boolean = process.env.MODE !== "production";
+export const PORT: number = parseInt(process.env.PORT || "3001", 10);
+export const DEV: boolean = process.env.MODE !== "production";
 
-const nextApp = next({ dev, hostname: "localhost", port });
+const nextApp = next({ dev: DEV, hostname: "localhost", port: PORT });
 const nextHandler: NextApiHandler = nextApp.getRequestHandler();
 
 import { rebuildGames as rebuildCheckerGames } from "@/server/games/checkers/CheckersRepository";
+import { rebuildGames as rebuildChessGames } from "@/server/games/chess/ChessRepository";
 
 nextApp.prepare().then(async () => {
   await setAllUsersToDisconnected();
   await cleanUp();
   setInterval(cleanUp, 1000 * 600);
   await rebuildCheckerGames();
+  await rebuildChessGames();
   io.on("connection", (socket: SocketServerSide) => {
     socket.on(Disconnect, () => {
       handleDisconnect(socket);
@@ -40,7 +41,7 @@ nextApp.prepare().then(async () => {
     );
   });
 
-  server.listen(port, () => {
-    console.log(`> Ready on http://localhost:${port}`);
+  server.listen(PORT, () => {
+    console.log(`> Ready on http://localhost:${PORT}`);
   });
 });

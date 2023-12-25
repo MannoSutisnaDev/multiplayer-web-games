@@ -117,6 +117,10 @@ export default abstract class BaseGameModel<
   async saveState() {
     const state = Buffer.from(JSON.stringify(this.createState()), "utf8");
     try {
+      const lobby = prisma.lobby.findFirst({ where: { id: this.id } });
+      if (!lobby) {
+        return;
+      }
       await prisma.gameState.upsert({
         where: { lobbyId: this.id },
         create: {

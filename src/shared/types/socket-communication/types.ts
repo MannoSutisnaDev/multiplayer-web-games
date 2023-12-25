@@ -5,6 +5,10 @@ import {
   PhaseIdCheckers,
 } from "@/shared/types/socket-communication/games/checkers";
 import {
+  PhaseChessTypes,
+  PhaseIdChess,
+} from "@/shared/types/socket-communication/games/chess";
+import {
   PhaseEnterUsernameTypes,
   PhaseIdEnterUsername,
 } from "@/shared/types/socket-communication/lobby/enter-username";
@@ -22,17 +26,20 @@ export type ServerToClientEvents = GeneralSocketFunctions["ServerToClient"] &
   PhaseEnterUsernameTypes["ServerToClient"] &
   PhaseLobbiesTypes["ServerToClient"] &
   PhaseLobbyTypes["ServerToClient"] &
-  PhaseCheckersTypes["ServerToClient"];
+  PhaseCheckersTypes["ServerToClient"] &
+  PhaseChessTypes["ServerToClient"];
 export type ClientToServerEvents = PhaseEnterUsernameTypes["ClientToServer"] &
   PhaseLobbiesTypes["ClientToServer"] &
   PhaseLobbyTypes["ClientToServer"] &
-  PhaseCheckersTypes["ClientToServer"];
+  PhaseCheckersTypes["ClientToServer"] &
+  PhaseChessTypes["ClientToServer"];
 
 export type PhaseIds =
   | typeof PhaseIdEnterUsername
   | typeof PhaseIdLobbies
   | typeof PhaseIdLobby
-  | typeof PhaseIdCheckers;
+  | typeof PhaseIdCheckers
+  | typeof PhaseIdChess;
 
 export interface Phase {
   id: PhaseIds;

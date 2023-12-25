@@ -4,13 +4,17 @@ import { BaseModalProps } from "@/client/types";
 interface Props extends BaseModalProps {
   title: string;
   message: string;
+  subContent?: React.ReactElement;
 }
 
-function PreInterruptingMessageModal({ title, message }: Props) {
+function PreInterruptingMessageModal({ title, message, subContent }: Props) {
   return (
     <div className="interrupting-message">
-      <h1>{title}</h1>
-      <div className="message-content">{message}</div>
+      <div className="main-content">
+        <h1>{title}</h1>
+        <div className="message-content">{message}</div>
+      </div>
+      <div className="sub-content">{subContent}</div>
     </div>
   );
 }

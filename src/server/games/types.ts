@@ -1,6 +1,9 @@
 import { SocketServerSide } from "@/server/types";
+import { PlayerState } from "@/shared/types/socket-communication/games/chess";
 import {
   CellCollection,
+  CheckersPiece,
+  ChessPiece,
   GamePosition,
   PiecesDirection,
   PlayableCells,
@@ -13,9 +16,16 @@ export interface BasePlayerModelInterface {
   connected: boolean;
 }
 
-export interface CheckersPlayerInterface extends BasePlayerModelInterface {
+export interface ChessBoardPlayerInterface extends BasePlayerModelInterface {
   direction: PiecesDirection | null;
+}
+
+export interface CheckersPlayerInterface extends ChessBoardPlayerInterface {
   pieceThatHasStrikedPosition: GamePosition | null;
+}
+
+export interface ChessPlayerInterface extends ChessBoardPlayerInterface {
+  state: PlayerState;
 }
 
 export interface DeleteTimeoutReference {
@@ -48,13 +58,23 @@ export interface BaseGameModelInterface<
 
 export interface CheckersGameInterface
   extends BaseGameModelInterface<CheckersPlayerInterface> {
-  cells: CellCollection;
+  cells: CellCollection<CheckersPiece>;
   currentPlayerIndex: number;
   gameOver: {
     playerThatWonIndex: number;
     returnToLobbyTime: number;
   } | null;
   playableCells: PlayableCells;
+}
+
+export interface ChessGameInterface
+  extends BaseGameModelInterface<ChessPlayerInterface> {
+  cells: CellCollection<ChessPiece>;
+  currentPlayerIndex: number;
+  gameOver: {
+    playerThatWonIndex: number;
+    returnToLobbyTime: number;
+  } | null;
 }
 
 export interface InterruptingMessage {
@@ -68,7 +88,18 @@ export interface BaseGameDataInterface {
 
 export interface CheckersGameDataInterface extends BaseGameDataInterface {
   players: CheckersPlayerInterface[];
-  cells: CellCollection;
+  cells: CellCollection<CheckersPiece>;
+  currentPlayerIndex: number;
+  selfPlayerIndex: number;
+  interruptingMessage: {
+    title: string;
+    message: string;
+  } | null;
+}
+
+export interface ChessGameDataInterface extends BaseGameDataInterface {
+  players: ChessPlayerInterface[];
+  cells: CellCollection<ChessPiece>;
   currentPlayerIndex: number;
   selfPlayerIndex: number;
   interruptingMessage: {

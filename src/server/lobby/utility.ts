@@ -4,6 +4,8 @@ import prisma from "@/server/db";
 import BaseGameModel from "@/server/games/base/BaseGameModel";
 import { repository as checkersRepository } from "@/server/games/checkers/CheckersRepository";
 import { PhaseCheckers } from "@/server/games/checkers/phases/checkers";
+import { repository as chessRepository } from "@/server/games/chess/ChessRepository";
+import { PhaseChess } from "@/server/games/chess/phases/chess";
 import { io } from "@/server/init";
 import {
   removeScheduledDelete,
@@ -102,6 +104,9 @@ export const updateUserData = async (socket: SocketServerSide) => {
     switch (gameType) {
       case GameTypes.Checkers:
         setPhase(socket, PhaseCheckers);
+        break;
+      case GameTypes.Chess:
+        setPhase(socket, PhaseChess);
         break;
     }
   }
@@ -392,7 +397,7 @@ export const leaveLobby = async (data: SocketServerSide | string) => {
     where: { id: user.id },
     data: { ready: false, joinedLobbyId: null },
   });
-  const game = checkersRepository.findOne(lobby.id);
+  const game = chessRepository.findOne(lobby.id);
   if (game) {
     game.leaveGame(user.id);
   }
@@ -518,6 +523,9 @@ export const findGameBasedOnLobby = (
   switch (lobby.GameType.name as GameTypes) {
     case GameTypes.Checkers:
       game = checkersRepository.findOne(lobby.id);
+      break;
+    case GameTypes.Chess:
+      game = chessRepository.findOne(lobby.id);
       break;
   }
   return game;

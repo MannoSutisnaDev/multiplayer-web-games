@@ -1,11 +1,11 @@
 import RebuildableModelInterface from "@/server/games/base/RebuildableModelInterface";
 import {
+  CheckersPiece,
   MoveMode,
-  Piece as PieceInterface,
 } from "@/shared/types/socket-communication/games/game-types";
 
 export default class Piece
-  implements PieceInterface, RebuildableModelInterface<PieceInterface>
+  implements CheckersPiece, RebuildableModelInterface<CheckersPiece>
 {
   index: number;
   playerIndex: number;
@@ -17,8 +17,7 @@ export default class Piece
     this.moveMode = MoveMode.REGULAR;
   }
 
-  rebuild(data: PieceInterface) {
-    this.index = data.index;
+  rebuild(data: CheckersPiece) {
     this.playerIndex = data.playerIndex;
     this.moveMode = data.moveMode;
   }
