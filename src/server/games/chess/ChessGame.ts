@@ -105,9 +105,9 @@ export default class ChessGame extends BaseGameModel<
   }
 
   placeAllPieces(cellCollection: CellCollection<ChessPiece>) {
-    knightQueenScenario(this);
-    // this.placePlayerOnePieces(cellCollection);
-    // this.placePlayerTwoPieces(cellCollection);
+    // knightQueenScenario(this);
+    this.placePlayerOnePieces(cellCollection);
+    this.placePlayerTwoPieces(cellCollection);
   }
 
   placePlayerOnePieces(cellCollection: CellCollection<ChessPiece>) {

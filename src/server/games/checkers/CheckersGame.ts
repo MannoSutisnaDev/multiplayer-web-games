@@ -211,7 +211,6 @@ export default class CheckersGame extends BaseGameModel<
         const playableCell = playableCells[i];
         collection[playableCell.row][playableCell.column].playerPiece =
           this.generatePiece(i, playerIndex);
-        break;
       }
     } else {
       let endIndex = playableCells.length - 1;
@@ -219,7 +218,6 @@ export default class CheckersGame extends BaseGameModel<
         const playableCell = playableCells[endIndex - i];
         collection[playableCell.row][playableCell.column].playerPiece =
           this.generatePiece(i, playerIndex);
-        break;
       }
     }
   }
