@@ -32,8 +32,10 @@ h1 {
 }
 
 body {
-  width: 100vw;
-  height: 100vh;
+  width: 100%; /* old browsers */
+  height: 100%;
+  width: 100dvw; /* new browsers */
+  height: 100dvh;
   padding: 0;
   margin: 0;
   display: flex;
