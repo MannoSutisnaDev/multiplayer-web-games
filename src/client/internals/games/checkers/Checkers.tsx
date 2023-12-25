@@ -26,6 +26,7 @@ function PreCheckers(props: BoardProps<CheckersPiece>) {
     setCurrentPlayerIndex,
     setSelfPlayerIndex,
     setInterruptingMessage,
+    setSpectators,
   } = useContext(TwoPlayerTurnBasedContext);
   const { setGameCells, setSelectedPiece } = useContext(ChessBoardContext);
 
@@ -44,12 +45,14 @@ function PreCheckers(props: BoardProps<CheckersPiece>) {
       setIsLoaded(true);
       setSelectedPiece(null, false);
       setGameCells(gameData.cells);
+      setSpectators(gameData.spectators);
     });
 
     if (!signaledReady.current) {
       signaledReady.current = true;
       socket.emit("ReadyToPlay");
       socket.emit("RequestGameStateUpdate");
+      console.log("request game state update");
     }
 
     return () => {
@@ -65,6 +68,7 @@ function PreCheckers(props: BoardProps<CheckersPiece>) {
     setPlayers,
     setSelectedPiece,
     setSelfPlayerIndex,
+    setSpectators,
   ]);
 
   return props.board;

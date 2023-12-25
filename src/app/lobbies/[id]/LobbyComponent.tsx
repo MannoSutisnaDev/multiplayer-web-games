@@ -46,9 +46,13 @@ export default function Lobby() {
     };
   }, [addErrorMessage]);
 
-  const playerSelf = lobby?.Users?.find?.((player) => player.id === sessionId);
+  const playerSelf = lobby?.Players?.find?.(
+    (player) => player.userId === sessionId
+  );
 
-  const playerIsOwner = playerSelf?.LobbyItOwns?.id === lobbyId;
+  const playerIsOwner = playerSelf?.User?.LobbyItOwns?.id === lobbyId;
+
+  const playerIsSpectator = playerSelf?.spectator;
 
   const title = lobby
     ? `Lobby "${lobby?.name}" | Game "${lobby.GameType.name}"`
@@ -61,11 +65,11 @@ export default function Lobby() {
   };
 
   let extraClasses = [];
-  const players = lobby?.Users ?? [];
+  const players = lobby?.Players ?? [];
   for (let i = 0; i < players.length; i++) {
     const player = players[i];
     extraClasses.push([
-      sessionId === player.id ? "player-self" : null,
+      sessionId === player.userId ? "player-self" : null,
       null,
       null,
     ]);
@@ -78,20 +82,24 @@ export default function Lobby() {
     }[] = [
       {
         label: "Make user owner",
-        function: () => socket.emit("SetNewOwner", { userId: player.id }),
+        function: () => socket.emit("SetNewOwner", { userId: player.userId }),
       },
       {
         label: "Kick user",
-        function: () => socket.emit("KickUser", { userId: player.id }),
+        function: () => socket.emit("KickUser", { userId: player.userId }),
       },
     ];
 
+    let status = player.spectator ? "Spectator" : "";
+    if (!player.spectator) {
+      status = player.ready ? "Ready" : "Not ready";
+    }
     return {
-      name: player.username,
-      status: player.ready ? "Ready" : "Not ready",
+      name: player.User.username,
+      status,
       options: (
         <div className="options options-content">
-          {playerIsOwner && player.id !== sessionId && (
+          {playerIsOwner && player.userId !== sessionId && (
             <ThreeDotsMenu options={options} />
           )}
         </div>
@@ -99,19 +107,22 @@ export default function Lobby() {
     };
   });
 
-  const readyButton = (
-    <button
-      id="ready"
-      className="ready-button"
-      disabled={isSubmitting}
-      onClick={() => {
-        setIsSubmitting(true);
-        socket.emit("SetReady", { ready: !playerSelf?.ready });
-      }}
-    >
-      {!playerSelf?.ready ? "Ready" : "Not ready"}
-    </button>
-  );
+  let readyButton = null;
+  if (!playerIsSpectator) {
+    readyButton = (
+      <button
+        id="ready"
+        className="ready-button"
+        disabled={isSubmitting}
+        onClick={() => {
+          setIsSubmitting(true);
+          socket.emit("SetReady", { ready: !playerSelf?.ready });
+        }}
+      >
+        {!playerSelf?.ready ? "Ready" : "Not ready"}
+      </button>
+    );
+  }
   const leaveButton = (
     <button
       id="leave"
@@ -183,31 +194,6 @@ export default function Lobby() {
         tableClass="lobby-overview"
         extraColumnClasses={extraClasses}
       />
-      {/* <div className="waiting-room-body lobby-body">
-        <div className="waiting-room-container lobby-container">
-          <div className="waiting-room-info">
-            <h1 className="waiting-room-title">{title}</h1>
-          </div>
-          <div className="waiting-room-columns">
-            <div className="waiting-room-row player-row">
-              <h2 className="name">Player name</h2>
-              <h2 className="status">Status</h2>
-              <h2 className="options" />
-            </div>
-          </div>
-          <div className="waiting-room-rows">{playerRows}</div>
-          <div className="button-section left-right">
-            <div className="left-section">
-              {startButton}
-              {readyButton}
-            </div>
-            <div className="right-section">
-              {leaveButton}
-              {editLobbyButton}
-            </div>
-          </div>
-        </div>
-      </div> */}
     </>
   );
 }

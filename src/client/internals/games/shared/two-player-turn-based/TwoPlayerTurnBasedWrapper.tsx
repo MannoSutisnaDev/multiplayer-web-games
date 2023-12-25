@@ -1,13 +1,14 @@
 "use client";
 
-import { createContext, PropsWithChildren, useState } from "react";
+import { createContext, useContext, useState } from "react";
 
 import {
   TwoPlayerTurnBasedContextInterface,
   TwoPlayerTurnBasedProps,
 } from "@/client/internals/games/shared/two-player-turn-based/types";
 import InterruptingMessageModal from "@/client/internals/modal/implementation/InterruptingMessageModal";
-import { InterruptingMessage } from "@/server/games/types";
+import { SocketContextWrapper } from "@/client/internals/socket/SocketContext";
+import { InterruptingMessage, PlayerData } from "@/server/games/types";
 import { BasePlayerModelInterface } from "@/shared/types/socket-communication/games/game-types";
 
 export const TwoPlayerTurnBasedContext =
@@ -16,6 +17,8 @@ export const TwoPlayerTurnBasedContext =
     setIsLoaded: () => {},
     players: [],
     setPlayers: () => {},
+    spectators: [],
+    setSpectators: () => {},
     currentPlayerIndex: -1,
     setCurrentPlayerIndex: () => {},
     selfPlayerIndex: -1,
@@ -30,10 +33,13 @@ export default function TwoPlayerTurnBasedWrapper<
   const TwoPlayerTurnBased = (props: P) => {
     const [isLoaded, setIsLoaded] = useState(false);
     const [players, setPlayers] = useState<BasePlayerModelInterface[]>([]);
+    const [spectators, setSpectators] = useState<PlayerData[]>([]);
     const [currentPlayerIndex, setCurrentPlayerIndex] = useState(-1);
     const [selfPlayerIndex, setSelfPlayerIndex] = useState(-1);
     const [interruptingMessage, setInterruptingMessage] =
       useState<InterruptingMessage | null>(null);
+
+    const { sessionId } = useContext(SocketContextWrapper);
 
     let topPlayerClass: string = "";
     let topPlayerName: string = "";
@@ -60,20 +66,28 @@ export default function TwoPlayerTurnBasedWrapper<
       bottomPlayerName = players[1].name;
     }
 
+    const isSpectator = !!spectators.filter(
+      (spectator) => spectator.id === sessionId
+    )[0];
+
     const footer = (
       <div className="footer">
         <button
           className="leave-button"
           onClick={() => {
-            props?.leaveFunction?.(!interruptingMessage);
+            props?.leaveFunction?.(
+              isLoaded && !interruptingMessage && !isSpectator
+            );
           }}
           onTouchStart={() => {
-            props?.leaveFunction?.(!interruptingMessage);
+            props?.leaveFunction?.(
+              isLoaded && !interruptingMessage && !isSpectator
+            );
           }}
         >
           Leave game
         </button>
-        <button
+        {/* <button
           className="reset-button"
           onClick={() => {
             props?.resetFunction?.();
@@ -83,7 +97,7 @@ export default function TwoPlayerTurnBasedWrapper<
           }}
         >
           Reset
-        </button>
+        </button> */}
       </div>
     );
 
@@ -94,6 +108,8 @@ export default function TwoPlayerTurnBasedWrapper<
           setIsLoaded,
           players,
           setPlayers,
+          spectators,
+          setSpectators,
           currentPlayerIndex,
           setCurrentPlayerIndex,
           selfPlayerIndex,
@@ -118,7 +134,7 @@ export default function TwoPlayerTurnBasedWrapper<
               </div>
             </>
           ) : (
-            <div className="main">
+            <div className={`main ${isSpectator ? "spectating" : ""}`}>
               <div className="game-container">
                 <div className="player-label-container">
                   <div className={topPlayerClass}>{topPlayerName}</div>

@@ -8,11 +8,15 @@ export default class CheckersRepository extends BaseGameRepository<CheckersGame>
 
 export const repository = new CheckersRepository();
 
-export const createGame = (id: string, players: PlayerData[]): CheckersGame => {
+export const createGame = (
+  id: string,
+  players: PlayerData[],
+  spectators: PlayerData[]
+): CheckersGame => {
   if (repository.findOne(id)) {
     throw new Error("Game with lobby ID already exists.");
   }
-  const game = new CheckersGame(id, players);
+  const game = new CheckersGame(id, players, spectators);
   repository.save(game);
   return game;
 };
@@ -27,7 +31,7 @@ export const rebuildGames = async () => {
     },
   });
   for (const lobby of lobbies) {
-    const game = createGame(lobby.id, []);
+    const game = createGame(lobby.id, [], []);
     try {
       game.rebuild();
     } catch (e) {

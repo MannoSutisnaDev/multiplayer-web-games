@@ -8,11 +8,15 @@ export default class ChessRepository extends BaseGameRepository<ChessGame> {}
 
 export const repository = new ChessRepository();
 
-export const createGame = (id: string, players: PlayerData[]): ChessGame => {
+export const createGame = (
+  id: string,
+  players: PlayerData[],
+  spectators: PlayerData[]
+): ChessGame => {
   if (repository.findOne(id)) {
     throw new Error("Game with lobby ID already exists.");
   }
-  const game = new ChessGame(id, players);
+  const game = new ChessGame(id, players, spectators);
   repository.save(game);
   return game;
 };
@@ -27,7 +31,7 @@ export const rebuildGames = async () => {
     },
   });
   for (const lobby of lobbies) {
-    const game = createGame(lobby.id, []);
+    const game = createGame(lobby.id, [], []);
     try {
       game.rebuild();
     } catch (e) {

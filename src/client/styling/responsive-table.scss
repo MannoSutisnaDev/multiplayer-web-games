@@ -260,7 +260,7 @@
 @media (min-width: 651px) and (max-width: 800px) {
   .lobbies-body {
     .lobbies-table {
-      width: 95vw;
+      width: 90vw;
     }
   }
 }
@@ -282,7 +282,7 @@
 @media (max-width: #{$lobbies-mobile-cutoff}) {
   .lobbies-body {
     .lobbies-table {
-      width: 95vw;
+      width: 90vw;
       thead,
       tbody {
         tr {
@@ -294,6 +294,7 @@
       }
 
       tbody {
+        border: solid 1px white;
         display: block;
         max-height: 500px;
         width: 100%;
@@ -311,9 +312,6 @@
           max-width: 100px;
         }
 
-        tr:first-child {
-          display: none;
-        }
         td {
           display: grid;
           gap: 0.5rem;

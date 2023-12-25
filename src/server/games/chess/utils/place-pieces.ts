@@ -6,15 +6,15 @@ import { PieceBuilder } from "./general";
 export const knightQueenScenario = (game: ChessGame) => {
   game.cells[7][1].playerPiece = PieceBuilder(
     PIECE_TYPES.KING,
-    1,
     7,
+    1,
     0,
     game.generateFetchGameFunction()
   );
-  game.cells[5][2].playerPiece = PieceBuilder(
+  game.cells[5][7].playerPiece = PieceBuilder(
     PIECE_TYPES.QUEEN,
     5,
-    2,
+    7,
     1,
     game.generateFetchGameFunction()
   );

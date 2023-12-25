@@ -23,11 +23,11 @@ const findUserAndGame = async (
   user: User;
 } | null> => {
   const user = await findUser(socket);
-  if (!user || !user.joinedLobbyId) {
+  if (!user || !user.GamePlayer) {
     socket.emit("GenericResponseError", { error: "Can't find user." });
     return null;
   }
-  const game = repository.findOne(user.joinedLobbyId);
+  const game = repository.findOne(user.GamePlayer.lobbyId);
   if (!game) {
     socket.emit("GenericResponseError", { error: "Game not found." });
     return null;

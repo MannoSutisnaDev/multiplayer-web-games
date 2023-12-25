@@ -16,6 +16,7 @@ import {
   InterruptingMessage,
   PlayerData,
 } from "@/server/games/types";
+import { deleteGameAndReturnToLobby } from "@/server/lobby/utility";
 import { SocketServerSide } from "@/server/types";
 import {
   Cell,
@@ -44,8 +45,8 @@ export default class CheckersGame extends BaseGameModel<
   } | null;
   playableCells: PlayableCells;
 
-  constructor(key: string, players: PlayerData[]) {
-    super(key, players);
+  constructor(key: string, players: PlayerData[], spectators: PlayerData[]) {
+    super(key, players, spectators);
     this.cells = [];
     this.currentPlayerIndex = 0;
     this.gameOver = null;
@@ -67,6 +68,7 @@ export default class CheckersGame extends BaseGameModel<
       players.push(checkersPlayer);
     }
     this.players = players;
+    this.spectators = data.spectators;
     this.cells = this.buildCells(data.cells);
     this.currentPlayerIndex = data.currentPlayerIndex;
     this.gameOver = data.gameOver;
@@ -114,6 +116,7 @@ export default class CheckersGame extends BaseGameModel<
       playableCells: [],
       gameStarted: this.gameStarted,
       players,
+      spectators: this.spectators,
       gameStateModifiers: {},
       deleteTimeoutReference,
     };
@@ -127,21 +130,15 @@ export default class CheckersGame extends BaseGameModel<
     this.players = gamePlayers;
   }
 
-  initializeDeleteGameTimeout(): boolean {
-    if (super.initializeDeleteGameTimeout()) {
-      return true;
-    }
-    const deleteRef = this.deleteTimeoutReference;
-    if (!deleteRef) {
-      return false;
-    }
-    const secondsLeft = this.getSecondsLeftDeleteTimeoutReference();
-    switch (deleteRef.deleteGameType) {
-      case DeleteGameTypes.Disconnected:
+  initializeDeleteGameTimeoutSpecific(
+    deleteGameType: DeleteGameTypes,
+    secondsLeft: number
+  ) {
+    switch (deleteGameType) {
+      case DeleteGameTypes.GameOver:
         this.scheduleDeleteGameOver(secondsLeft);
         break;
     }
-    return true;
   }
 
   initializeGame() {
@@ -214,6 +211,7 @@ export default class CheckersGame extends BaseGameModel<
         const playableCell = playableCells[i];
         collection[playableCell.row][playableCell.column].playerPiece =
           this.generatePiece(i, playerIndex);
+        break;
       }
     } else {
       let endIndex = playableCells.length - 1;
@@ -221,22 +219,12 @@ export default class CheckersGame extends BaseGameModel<
         const playableCell = playableCells[endIndex - i];
         collection[playableCell.row][playableCell.column].playerPiece =
           this.generatePiece(i, playerIndex);
+        break;
       }
     }
   }
 
   startGame(): void {}
-
-  getPlayerIndexViaSocket(socket: SocketServerSide): number {
-    const sessionId = socket?.data?.sessionId ?? null;
-    if (!sessionId) {
-      return -1;
-    }
-    const selfPlayerIndex = this.players.findIndex(
-      (player) => player.id === sessionId
-    );
-    return selfPlayerIndex;
-  }
 
   movePiece(
     socket: SocketServerSide,
@@ -408,12 +396,19 @@ export default class CheckersGame extends BaseGameModel<
     socket: SocketServerSide
   ): CheckersGameDataInterface {
     const selfPlayerIndex = this.getPlayerIndexViaSocket(socket);
+    const isSpectator = !!this.spectators.filter(
+      (spectator) => spectator.id === socket.data.sessionId
+    )[0];
+
     return {
       players: this.players,
-      cells: this.getCells(this.sendCellsMirrored(selfPlayerIndex)),
+      cells: this.getCells(
+        this.sendCellsMirrored(isSpectator ? 0 : selfPlayerIndex)
+      ),
       currentPlayerIndex: this.currentPlayerIndex,
       interruptingMessage: null,
-      selfPlayerIndex,
+      spectators: this.spectators,
+      selfPlayerIndex: isSpectator ? 0 : selfPlayerIndex,
     };
   }
 
@@ -446,11 +441,16 @@ export default class CheckersGame extends BaseGameModel<
   ): InterruptingMessage {
     const { playerWhoWonIndex, playerSelfIndex } =
       this.getGameOverPlayerIndexes(socket);
+
+    const isSpectator = !!this.spectators.filter(
+      (spectator) => spectator.id === socket.data.sessionId
+    )[0];
+
     const secondsLeft = this.getSecondsLeftDeleteTimeoutReference();
     const winningPlayer = this.players[playerWhoWonIndex];
     const player = this.players[playerSelfIndex];
     const winMessage =
-      winningPlayer.id === player.id
+      !isSpectator && winningPlayer.id === player.id
         ? "You won!"
         : `Player: '${winningPlayer.name}' has won!`;
     const message = `${winMessage} \n\n You will be returned to the loby in ${secondsLeft} seconds.`;
@@ -465,7 +465,14 @@ export default class CheckersGame extends BaseGameModel<
       gameData.interruptingMessage =
         this.createGameOverInterruptingMessage(socket);
     };
-    this.scheduleDelete(DeleteGameTypes.GameOver, func, deleteAfterSeconds);
+    this.scheduleDelete(
+      DeleteGameTypes.GameOver,
+      func,
+      deleteAfterSeconds,
+      () => {
+        deleteGameAndReturnToLobby(this.id);
+      }
+    );
   }
 
   sendCellsMirrored(playerIndex: number) {

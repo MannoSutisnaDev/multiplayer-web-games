@@ -5,6 +5,7 @@ import ChessPlayer from "@/server/games/chess/models/ChessPlayer";
 import type BasePiece from "@/server/games/chess/models/pieces/BasePiece";
 import type King from "@/server/games/chess/models/pieces/King";
 import type Pawn from "@/server/games/chess/models/pieces/Pawn";
+import Rook from "@/server/games/chess/models/pieces/Rook";
 import {
   FetchGame,
   PLAYER_ONE_PIECES,
@@ -31,6 +32,7 @@ import {
   InterruptingMessage,
   PlayerData,
 } from "@/server/games/types";
+import { deleteGameAndReturnToLobby } from "@/server/lobby/utility";
 import { SocketServerSide } from "@/server/types";
 import {
   PIECE_TYPES,
@@ -58,8 +60,8 @@ export default class ChessGame extends BaseGameModel<
     returnToLobbyTime: number;
   } | null;
 
-  constructor(key: string, players: PlayerData[]) {
-    super(key, players);
+  constructor(key: string, players: PlayerData[], spectators: PlayerData[]) {
+    super(key, players, spectators);
     this.currentPlayerIndex = 0;
     this.cells = this.createCellCollection();
     this.gameOver = null;
@@ -77,6 +79,17 @@ export default class ChessGame extends BaseGameModel<
     player2.setDirection(PiecesDirection.DOWN);
   }
 
+  initializeDeleteGameTimeoutSpecific(
+    deleteGameType: DeleteGameTypes,
+    secondsLeft: number
+  ) {
+    switch (deleteGameType) {
+      case DeleteGameTypes.GameOver:
+        this.scheduleDeleteGameOver(secondsLeft);
+        break;
+    }
+  }
+
   createCellCollection(): CellCollection<ChessPiece> {
     const cellCollection: CellCollection<ChessPiece> = [];
     let index = 0;
@@ -92,8 +105,9 @@ export default class ChessGame extends BaseGameModel<
   }
 
   placeAllPieces(cellCollection: CellCollection<ChessPiece>) {
-    this.placePlayerOnePieces(cellCollection);
-    this.placePlayerTwoPieces(cellCollection);
+    knightQueenScenario(this);
+    // this.placePlayerOnePieces(cellCollection);
+    // this.placePlayerTwoPieces(cellCollection);
   }
 
   placePlayerOnePieces(cellCollection: CellCollection<ChessPiece>) {
@@ -151,6 +165,7 @@ export default class ChessGame extends BaseGameModel<
       players.push(chessPlayer);
     }
     this.players = players;
+    this.spectators = data.spectators;
     this.cells = this.buildCells(data.cells);
     this.currentPlayerIndex = data.currentPlayerIndex;
     this.gameOver = data.gameOver;
@@ -165,13 +180,22 @@ export default class ChessGame extends BaseGameModel<
       for (const cell of data) {
         const newCell = new Cell(index, cell.row, cell.column);
         if (cell.playerPiece) {
+          let hasMoved = false;
+          if (
+            [PIECE_TYPES.PAWN, PIECE_TYPES.KING, PIECE_TYPES.ROOK].includes(
+              cell.playerPiece.type
+            )
+          ) {
+            const pieceWithHasMoved = cell.playerPiece as Rook;
+            hasMoved = pieceWithHasMoved.hasMoved;
+          }
           const piece = PieceBuilder(
             cell.playerPiece.type,
             cell.row,
             cell.column,
             cell.playerPiece.playerIndex,
             this.generateFetchGameFunction(),
-            true
+            hasMoved
           );
           piece.rebuild(cell.playerPiece);
           newCell.setPiece(piece);
@@ -210,6 +234,7 @@ export default class ChessGame extends BaseGameModel<
       gameOver: this.gameOver,
       gameStarted: this.gameStarted,
       players,
+      spectators: this.spectators,
       gameStateModifiers: {},
       deleteTimeoutReference,
     };
@@ -229,12 +254,18 @@ export default class ChessGame extends BaseGameModel<
     socket: SocketServerSide
   ): ChessGameDataInterface {
     const selfPlayerIndex = this.getPlayerIndexViaSocket(socket);
+    const isSpectator = !!this.spectators.filter(
+      (spectator) => spectator.id === socket.data.sessionId
+    )[0];
     return {
       players: this.players,
-      cells: this.getCells(this.sendCellsMirrored(selfPlayerIndex)),
+      cells: this.getCells(
+        this.sendCellsMirrored(isSpectator ? 0 : selfPlayerIndex)
+      ),
       currentPlayerIndex: this.currentPlayerIndex,
       interruptingMessage: null,
-      selfPlayerIndex,
+      spectators: this.spectators,
+      selfPlayerIndex: isSpectator ? 0 : selfPlayerIndex,
     };
   }
 
@@ -314,16 +345,12 @@ export default class ChessGame extends BaseGameModel<
 
       const convertedPiece = piece as BasePiece;
 
-      console.log("BEFORE VALIDATE!");
-
       const validMove = convertedPiece.validateMove(targetRow, targetColumn);
       if (!validMove) {
         throw new Error(
           `This move is not valid for piece: '${convertedPiece.getType()}'`
         );
       }
-
-      console.log({ validMove });
 
       if (cell.playerPiece.type !== PIECE_TYPES.KING) {
         if (
@@ -403,20 +430,9 @@ export default class ChessGame extends BaseGameModel<
 
     this.gameOver = {
       playerThatWonIndex: this.currentPlayerIndex,
-      returnToLobbyTime: 60,
+      returnToLobbyTime: 10,
     };
     this.scheduleDeleteGameOver(this.gameOver.returnToLobbyTime);
-  }
-
-  getPlayerIndexViaSocket(socket: SocketServerSide): number {
-    const sessionId = socket?.data?.sessionId ?? null;
-    if (!sessionId) {
-      return -1;
-    }
-    const selfPlayerIndex = this.players.findIndex(
-      (player) => player.id === sessionId
-    );
-    return selfPlayerIndex;
   }
 
   getGameOverPlayerIndexes(socket: SocketServerSide): {
@@ -435,11 +451,15 @@ export default class ChessGame extends BaseGameModel<
   ): InterruptingMessage {
     const { playerWhoWonIndex, playerSelfIndex } =
       this.getGameOverPlayerIndexes(socket);
+    const isSpectator = !!this.spectators.filter(
+      (spectator) => spectator.id === socket.data.sessionId
+    )[0];
+
     const secondsLeft = this.getSecondsLeftDeleteTimeoutReference();
     const winningPlayer = this.players[playerWhoWonIndex];
     const player = this.players[playerSelfIndex];
     const winMessage =
-      winningPlayer.id === player.id
+      !isSpectator && winningPlayer.id === player.id
         ? "You won!"
         : `Player: '${winningPlayer.name}' has won!`;
     const message = `${winMessage} \n\n You will be returned to the loby in ${secondsLeft} seconds.`;
@@ -449,12 +469,19 @@ export default class ChessGame extends BaseGameModel<
     };
   }
 
-  scheduleDeleteGameOver(deleteAfterSeconds: number = 10) {
+  scheduleDeleteGameOver(deleteAfterSeconds: number) {
     const func: GameStateModifier = (socket, gameData) => {
       gameData.interruptingMessage =
         this.createGameOverInterruptingMessage(socket);
     };
-    this.scheduleDelete(DeleteGameTypes.GameOver, func, deleteAfterSeconds);
+    this.scheduleDelete(
+      DeleteGameTypes.GameOver,
+      func,
+      deleteAfterSeconds,
+      () => {
+        deleteGameAndReturnToLobby(this.id);
+      }
+    );
   }
 
   getAllValidMovesForPlayer(

@@ -5,7 +5,6 @@ import {
   ValidPositionCollection,
   ValidPositionType,
 } from "@/server/games/chess/types";
-import { printValidPositionsCollection } from "@/server/games/chess/utils/general";
 import {
   generateValidPositionCollection,
   setValidDiagonalCells,

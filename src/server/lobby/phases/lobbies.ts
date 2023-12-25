@@ -1,12 +1,16 @@
 import prisma from "@/server/db";
+import BaseGameModel from "@/server/games/base/BaseGameModel";
 import { setPhase } from "@/server/lobby/phases/adjust-phase";
 import { PhaseLobby } from "@/server/lobby/phases/lobby";
 import {
+  findGameBasedOnLobby,
   sendUpdatedLobbies,
   sendUpdatedLobbiesToPlayer,
   sendUpdatedLobby,
+  updateUserData,
 } from "@/server/lobby/utility";
 import { SocketServerSide } from "@/server/types";
+import { MAX_SPECTATORS } from "@/shared/types/socket-communication/games/game-types";
 import { GameTypes } from "@/shared/types/socket-communication/general";
 import {
   CreateLobby,
@@ -65,15 +69,13 @@ const createLobby = (
         name: lobbyName,
         gameTypeId: gameTypeEntry.id,
         gameStarted: false,
-        lobbyOwnerId: user.id,
+        ownerId: user.id,
       },
     });
-    await prisma.user.update({
-      where: {
-        id: user.id,
-      },
+    await prisma.gamePlayer.create({
       data: {
-        joinedLobbyId: lobby.id,
+        lobbyId: lobby.id,
+        userId: user.id,
       },
     });
     setPhase(socket, PhaseLobby);
@@ -85,7 +87,7 @@ const createLobby = (
 
 const joinLobby = (
   socket: SocketServerSide,
-  { lobbyId }: { lobbyId: string }
+  { lobbyId, spectator }: { lobbyId: string; spectator: boolean }
 ) => {
   const asyncExecution = async () => {
     const user = await prisma.user.findFirst({
@@ -99,14 +101,19 @@ const joinLobby = (
       });
       return;
     }
+
     const lobby = await prisma.lobby.findFirst({
       where: {
         id: lobbyId,
       },
       include: {
-        GameType: {},
-        Users: {
-          where: { connected: true },
+        GameType: true,
+        Players: {
+          where: {
+            User: {
+              connected: true,
+            },
+          },
         },
       },
     });
@@ -116,28 +123,66 @@ const joinLobby = (
       });
       return;
     }
-    if (lobby.Users.find((player) => player.id === user.id)) {
+    if (lobby.Players.find((player) => player.userId === user.id)) {
       socket.emit("GenericResponseError", {
         error: "You're already in this lobby.",
       });
       return;
     }
-    if (lobby.Users.length + 1 > lobby.GameType.maxPlayers) {
+    const fullLobby = !spectator
+      ? lobby.Players.filter((player) => !player.spectator).length >
+        lobby.GameType.maxPlayers
+      : lobby.Players.filter((player) => player.spectator).length >
+        MAX_SPECTATORS;
+    if (fullLobby) {
       socket.emit("GenericResponseError", {
         error: "Lobby is full.",
       });
       return;
     }
-    await prisma.user.update({
-      where: {
+
+    let gameLobby: BaseGameModel | undefined = undefined;
+    if (lobby.gameStarted) {
+      gameLobby = findGameBasedOnLobby(lobby);
+      if (!gameLobby) {
+        socket.emit("GenericResponseError", {
+          error: "Could not join game as spectator.",
+        });
+        return;
+      }
+      gameLobby.spectatorJoin({
         id: user.id,
+        name: user.username,
+      });
+    }
+
+    await prisma.gamePlayer.upsert({
+      where: {
+        userId: user.id,
       },
-      data: {
-        joinedLobbyId: lobby.id,
+      create: {
+        userId: user.id,
+        lobbyId: lobby.id,
+        ready: false,
+        spectator,
+      },
+      update: {
+        lobbyId: lobby.id,
+        ready: false,
+        spectator,
       },
     });
+
     setPhase(socket, PhaseLobby);
-    socket.emit("JoinLobbyResponseSuccess", { lobbyId });
+    if (spectator && gameLobby) {
+      await updateUserData(socket);
+    }
+    const gameType: GameTypes | null =
+      (lobby?.GameType?.name as GameTypes) ?? null;
+    socket.emit("JoinLobbyResponseSuccess", {
+      lobbyId,
+      gameType: gameLobby ? gameType : null,
+    });
     sendUpdatedLobbies();
     sendUpdatedLobby(lobby.id);
   };

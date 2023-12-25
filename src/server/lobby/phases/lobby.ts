@@ -34,15 +34,15 @@ import {
 const setReady = (socket: SocketServerSide, { ready }: { ready: boolean }) => {
   const asyncExecution = async () => {
     const user = await findUser(socket);
-    if (!user) {
+    if (!user || !user.GamePlayer) {
       return;
     }
-    await prisma.user.update({
-      where: { id: user.id },
+    await prisma.gamePlayer.update({
+      where: { userId: user.id, lobbyId: user.GamePlayer.lobbyId },
       data: { ready },
     });
     socket.emit("SetReadyResponseSuccess");
-    sendUpdatedLobby(user.joinedLobbyId);
+    sendUpdatedLobby(user.GamePlayer.lobbyId);
   };
   asyncExecution();
 };
@@ -61,18 +61,21 @@ const verifyIfUserIsOwner = async (
     socket.emit(emitType, { error: "User does not exist" });
     return null;
   }
-  if (!user.joinedLobbyId) {
+  if (!user.GamePlayer) {
     socket.emit(emitType, { error: "User is not in a lobby" });
     return null;
   }
   const lobby = await prisma.lobby.findFirst({
-    where: { id: user.joinedLobbyId },
+    where: { id: user.GamePlayer.lobbyId },
     include: {
       GameType: {},
-      Users: {
-        where: { connected: true },
+      Players: {
         include: {
-          LobbyItOwns: {},
+          User: {
+            include: {
+              LobbyItOwns: true,
+            },
+          },
         },
       },
     },
@@ -81,8 +84,8 @@ const verifyIfUserIsOwner = async (
     socket.emit(emitType, { error: "Lobby does not exist" });
     return null;
   }
-  const inLobby = lobby.Users.findIndex(
-    (lobbyUser) => lobbyUser.id === user.id
+  const inLobby = lobby.Players.findIndex(
+    (lobbyUser) => lobbyUser.userId === user.id
   );
   if (inLobby === -1) {
     socket.emit(emitType, {
@@ -90,7 +93,7 @@ const verifyIfUserIsOwner = async (
     });
     return null;
   }
-  if (user?.LobbyItOwns?.id !== user.joinedLobbyId) {
+  if (user?.LobbyItOwns?.id !== user.GamePlayer.lobbyId) {
     socket.emit(emitType, {
       error: "You are not the owner of the lobby",
     });
@@ -110,18 +113,19 @@ const startGame = (socket: SocketServerSide) => {
     }
     const { lobby } = isOwnerData;
     let readyCount = 0;
-    for (const user of lobby.Users) {
-      if (user.ready) {
+    const players = lobby.Players.filter((player) => !player.spectator);
+    for (const player of players) {
+      if (player.ready) {
         readyCount += 1;
       }
     }
-    if (lobby.Users.length < 2) {
+    if (players.length < 2) {
       socket.emit("GenericResponseError", {
         error: "At least 2 players should be in the lobby",
       });
       return;
     }
-    if (readyCount !== lobby.Users.length) {
+    if (readyCount !== players.length) {
       socket.emit("GenericResponseError", {
         error: "Not all players are ready",
       });
@@ -139,16 +143,25 @@ const startGame = (socket: SocketServerSide) => {
     }
     let game: BaseGameModel | null = null;
     try {
-      const lobbyPlayers = lobby.Users.map((user) => ({
-        id: user.id,
-        name: user.username,
-      }));
+      const players = lobby.Players.filter((player) => !player.spectator).map(
+        (player) => ({
+          id: player.userId,
+          name: player.User.username,
+        })
+      );
+      const spectators = lobby.Players.filter((player) => player.spectator).map(
+        (player) => ({
+          id: player.userId,
+          name: player.User.username,
+        })
+      );
+
       switch (lobby.GameType.name as GameTypes) {
         case GameTypes.Checkers:
-          game = createCheckersGame(lobby.id, lobbyPlayers);
+          game = createCheckersGame(lobby.id, players, spectators);
           break;
         case GameTypes.Chess:
-          game = createChessGame(lobby.id, lobbyPlayers);
+          game = createChessGame(lobby.id, players, spectators);
           break;
       }
     } catch (e: any) {
@@ -162,7 +175,7 @@ const startGame = (socket: SocketServerSide) => {
       return;
     }
     await game?.saveState();
-    const playerIds = lobby.Users.map((user) => user.id);
+    const playerIds = lobby.Players.map((player) => player.userId);
     const sockets = getSocketsByUserIds(playerIds);
     await Promise.all(
       sockets.map(
@@ -197,6 +210,9 @@ const editLobby = (
       return;
     }
     const { user, lobby } = isOwnerData;
+    if (!user.GamePlayer) {
+      return;
+    }
     const gameTypeEntry = await prisma.gameType.findFirst({
       where: {
         name: gameType,
@@ -218,7 +234,7 @@ const editLobby = (
         gameStarted: false,
       },
     });
-    sendUpdatedLobby(user.joinedLobbyId);
+    sendUpdatedLobby(user.GamePlayer.lobbyId);
     socket.emit("EditLobbyResponseSuccess");
   };
   asyncExecution();
@@ -231,8 +247,8 @@ const kickUser = (socket: SocketServerSide, { userId }: { userId: string }) => {
       return;
     }
     const { user, lobby } = isOwnerData;
-    const targetUserIndex = lobby.Users.findIndex(
-      (lobbyUser) => lobbyUser.id === userId
+    const targetUserIndex = lobby.Players.findIndex(
+      (player) => player.userId === userId
     );
     if (targetUserIndex === -1) {
       socket.emit("GenericResponseError", {
@@ -246,20 +262,17 @@ const kickUser = (socket: SocketServerSide, { userId }: { userId: string }) => {
       });
       return;
     }
-    await prisma.user.update({
+    await prisma.gamePlayer.delete({
       where: {
-        id: userId,
-      },
-      data: {
-        joinedLobbyId: null,
-        ready: false,
+        userId,
+        lobbyId: lobby.id,
       },
     });
     const targetUserSocket = getSocketByUserId(userId);
     if (targetUserSocket) {
       await updateUserData(targetUserSocket);
     }
-    sendUpdatedLobby(user.joinedLobbyId);
+    sendUpdatedLobby(lobby.id);
     sendUpdatedLobbies();
   };
   asyncExecution();
@@ -281,8 +294,8 @@ const setNewOwner = (
       });
       return;
     }
-    const targetUserIndex = lobby.Users.findIndex(
-      (lobbyUser) => lobbyUser.id === userId
+    const targetUserIndex = lobby.Players.findIndex(
+      (player) => player.userId === userId
     );
     if (targetUserIndex === -1) {
       socket.emit("GenericResponseError", {
@@ -290,18 +303,25 @@ const setNewOwner = (
       });
       return;
     }
+    const gamePlayer = await prisma.gamePlayer.findFirst({
+      where: {
+        userId,
+        lobbyId: lobby.id,
+        spectator: false,
+      },
+    });
     const targetUserSocket = getSocketByUserId(userId);
-    if (!targetUserSocket) {
+    if (!gamePlayer || !targetUserSocket) {
       socket.emit("GenericResponseError", {
-        error: "Could not update target user",
+        error: "Could not find the target user",
       });
       return;
     }
     await prisma.lobby.update({
       where: { id: lobby.id },
-      data: { lobbyOwnerId: userId },
+      data: { ownerId: userId },
     });
-    sendUpdatedLobby(user.joinedLobbyId);
+    sendUpdatedLobby(lobby.id);
   };
   asyncExecution();
 };

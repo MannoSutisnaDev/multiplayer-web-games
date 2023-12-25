@@ -27,13 +27,15 @@ export default abstract class BaseGameModel<
   gameStarted: boolean;
   deleteTimeoutReference: DeleteTimeoutReference | null = null;
   gameStateModifiers: Record<string, GameStateModifier>;
+  spectators: PlayerData[];
 
-  constructor(key: string, playerIds: PlayerData[]) {
+  constructor(key: string, players: PlayerData[], spectators: PlayerData[]) {
     this.id = key;
     this.gameStarted = false;
     this.players = [];
     this.gameStateModifiers = {};
-    this.initializePlayers(playerIds);
+    this.initializePlayers(players);
+    this.spectators = spectators;
   }
 
   destroy(hardDelete: boolean = false) {
@@ -54,9 +56,26 @@ export default abstract class BaseGameModel<
 
   abstract startGame(): void;
 
+  abstract initializeDeleteGameTimeoutSpecific(
+    deleteGameType: DeleteGameTypes,
+    secondsLeft: number
+  ): void;
+
   abstract createGameStateImplementation(
     socket: SocketServerSide
   ): GameDataInterface;
+
+  spectatorJoin(playerData: PlayerData) {
+    this.spectators.push(playerData);
+  }
+
+  spectatorLeave(playerId: string) {
+    const index = this.spectators.findIndex((player) => player.id === playerId);
+    if (index === -1) {
+      return;
+    }
+    this.spectators.splice(index, 1);
+  }
 
   removeGameStateModifier(key: string) {
     delete this.gameStateModifiers[key];
@@ -117,10 +136,6 @@ export default abstract class BaseGameModel<
   async saveState() {
     const state = Buffer.from(JSON.stringify(this.createState()), "utf8");
     try {
-      const lobby = prisma.lobby.findFirst({ where: { id: this.id } });
-      if (!lobby) {
-        return;
-      }
       await prisma.gameState.upsert({
         where: { lobbyId: this.id },
         create: {
@@ -139,10 +154,10 @@ export default abstract class BaseGameModel<
     }
   }
 
-  initializeDeleteGameTimeout(): boolean {
+  initializeDeleteGameTimeout(): void {
     const deleteRef = this.deleteTimeoutReference;
     if (!deleteRef) {
-      return false;
+      return;
     }
     const secondsLeft = this.getSecondsLeftDeleteTimeoutReference();
     switch (deleteRef.deleteGameType) {
@@ -153,9 +168,12 @@ export default abstract class BaseGameModel<
         this.scheduleDeletePlayersLeft(secondsLeft);
         break;
       default:
-        return false;
+        this.initializeDeleteGameTimeoutSpecific(
+          deleteRef.deleteGameType,
+          secondsLeft
+        );
+        break;
     }
-    return true;
   }
 
   getId(): string {
@@ -198,6 +216,11 @@ export default abstract class BaseGameModel<
     for (const socket of sockets) {
       this.sendGameStatePayload(socket, this.createGameState(socket));
     }
+    const spectatorIds = this.spectators.map((player) => player.id);
+    const spectatorSockets = getSocketsByUserIds(spectatorIds);
+    for (const socket of spectatorSockets) {
+      this.sendGameStatePayload(socket, this.createGameState(socket));
+    }
   }
 
   sendGameStateToPlayer(socket: SocketServerSide) {
@@ -205,17 +228,37 @@ export default abstract class BaseGameModel<
     this.sendGameStatePayload(socket, this.createGameState(socket));
   }
 
+  getPlayerIndexViaSocket(socket: SocketServerSide): number {
+    const sessionId = socket?.data?.sessionId ?? null;
+    if (!sessionId) {
+      return -1;
+    }
+    const isSpectator = !!this.spectators.filter(
+      (spectator) => spectator.id === sessionId
+    )[0];
+    const selfPlayerIndex = this.players.findIndex(
+      (player) => player.id === sessionId
+    );
+    return isSpectator ? 0 : selfPlayerIndex;
+  }
+
   handleConnectionChange(
     playerId: string,
     connected: boolean
   ): { allConnected: boolean } {
-    const player = this.players.find((player) => player.id === playerId);
-    if (!player) {
-      return {
-        allConnected: false,
-      };
+    const isSpectator = !!this.spectators.filter(
+      (spectator) => spectator.id === playerId
+    )[0];
+    if (!isSpectator) {
+      const player = this.players.find((player) => player.id === playerId);
+      if (!player) {
+        return {
+          allConnected: false,
+        };
+      } else {
+        player.connected = connected;
+      }
     }
-    player.connected = connected;
     const connectedPlayers = this.players.filter((player) => player.connected);
     const allConnected = connectedPlayers.length === this.players.length;
     return {
@@ -315,7 +358,8 @@ export default abstract class BaseGameModel<
   scheduleDelete(
     type: DeleteGameTypes,
     gameStateModifier: GameStateModifier,
-    deleteAfterSeconds: number
+    deleteAfterSeconds: number,
+    deleteFunction?: () => void
   ) {
     if (this.deleteTimeoutReference?.reference) {
       return;
@@ -343,13 +387,24 @@ export default abstract class BaseGameModel<
       }
       clearInterval(ref.reference);
       this.deleteTimeoutReference = null;
-      this.destroy(true);
+      if (!deleteFunction) {
+        this.destroy(true);
+      } else {
+        deleteFunction();
+      }
       this.removeGameStateModifier(type);
     }, 1000);
     this.deleteTimeoutReference.reference = interval;
   }
 
   leaveGame(playerId: string) {
+    const spectatorPlayer = this.spectators.find(
+      (player) => player.id === playerId
+    );
+    if (spectatorPlayer) {
+      this.spectatorLeave(playerId);
+      return;
+    }
     const player = this.players.find((player) => player.id === playerId);
     if (!player) {
       return;

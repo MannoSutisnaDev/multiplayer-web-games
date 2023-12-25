@@ -96,3 +96,5 @@ export interface PlayerPayload {
 export const COLUMNS = 8;
 export const ROWS = 8;
 export const PLAYER_PIECES = 12;
+
+export const MAX_SPECTATORS = 10;

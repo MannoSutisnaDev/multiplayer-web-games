@@ -1,6 +1,6 @@
 import { Dispatch, SetStateAction } from "react";
 
-import { InterruptingMessage } from "@/server/games/types";
+import { InterruptingMessage, PlayerData } from "@/server/games/types";
 import { BasePlayerModelInterface } from "@/shared/types/socket-communication/games/game-types";
 
 export interface TwoPlayerTurnBasedProps {
@@ -15,6 +15,8 @@ export interface TwoPlayerTurnBasedContextInterface<
   setIsLoaded: Dispatch<SetStateAction<boolean>>;
   players: T[];
   setPlayers: Dispatch<SetStateAction<T[]>>;
+  spectators: PlayerData[];
+  setSpectators: Dispatch<SetStateAction<PlayerData[]>>;
   currentPlayerIndex: number;
   setCurrentPlayerIndex: Dispatch<SetStateAction<number>>;
   selfPlayerIndex: number;
