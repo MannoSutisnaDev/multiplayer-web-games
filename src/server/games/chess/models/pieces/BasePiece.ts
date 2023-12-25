@@ -74,7 +74,6 @@ export default abstract class BasePiece
     this.targetRow = targetRow;
     this.targetColumn = targetColumn;
     this.setValidPositions(validPositionCollection);
-
     let moveType = validPositionCollection[targetRow]?.[targetColumn] ?? null;
 
     if (!moveType) {

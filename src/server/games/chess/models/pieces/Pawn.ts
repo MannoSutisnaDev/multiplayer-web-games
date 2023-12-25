@@ -1,6 +1,5 @@
 import BasePiece from "@/server/games/chess/models/pieces/BasePiece";
 import { FetchGame, ValidPositionCollection } from "@/server/games/chess/types";
-import { printValidPositionsCollection } from "@/server/games/chess/utils/general";
 import { setValidPawnMoveCells } from "@/server/games/chess/utils/position-validation";
 import { PIECE_TYPES } from "@/shared/types/socket-communication/games/chess";
 import {

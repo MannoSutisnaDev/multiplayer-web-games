@@ -54,6 +54,7 @@ export interface BaseGameModelInterface<
   gameStarted: boolean;
   gameStateModifiers: Record<string, GameStateModifier>;
   deleteTimeoutReference: DeleteTimeoutReference | null;
+  spectators: PlayerData[];
 }
 
 export interface CheckersGameInterface
@@ -84,6 +85,7 @@ export interface InterruptingMessage {
 
 export interface BaseGameDataInterface {
   interruptingMessage: InterruptingMessage | null;
+  spectators: PlayerData[];
 }
 
 export interface CheckersGameDataInterface extends BaseGameDataInterface {

@@ -113,18 +113,19 @@ const startGame = (socket: SocketServerSide) => {
     }
     const { lobby } = isOwnerData;
     let readyCount = 0;
-    for (const user of lobby.Players) {
-      if (user.ready) {
+    const players = lobby.Players.filter((player) => !player.spectator);
+    for (const player of players) {
+      if (player.ready) {
         readyCount += 1;
       }
     }
-    if (lobby.Players.length < 2) {
+    if (players.length < 2) {
       socket.emit("GenericResponseError", {
         error: "At least 2 players should be in the lobby",
       });
       return;
     }
-    if (readyCount !== lobby.Players.length) {
+    if (readyCount !== players.length) {
       socket.emit("GenericResponseError", {
         error: "Not all players are ready",
       });
@@ -142,16 +143,25 @@ const startGame = (socket: SocketServerSide) => {
     }
     let game: BaseGameModel | null = null;
     try {
-      const lobbyPlayers = lobby.Players.map((player) => ({
-        id: player.userId,
-        name: player.User.username,
-      }));
+      const players = lobby.Players.filter((player) => !player.spectator).map(
+        (player) => ({
+          id: player.userId,
+          name: player.User.username,
+        })
+      );
+      const spectators = lobby.Players.filter((player) => player.spectator).map(
+        (player) => ({
+          id: player.userId,
+          name: player.User.username,
+        })
+      );
+
       switch (lobby.GameType.name as GameTypes) {
         case GameTypes.Checkers:
-          game = createCheckersGame(lobby.id, lobbyPlayers);
+          game = createCheckersGame(lobby.id, players, spectators);
           break;
         case GameTypes.Chess:
-          game = createChessGame(lobby.id, lobbyPlayers);
+          game = createChessGame(lobby.id, players, spectators);
           break;
       }
     } catch (e: any) {
@@ -293,10 +303,17 @@ const setNewOwner = (
       });
       return;
     }
+    const gamePlayer = await prisma.gamePlayer.findFirst({
+      where: {
+        userId,
+        lobbyId: lobby.id,
+        spectator: false,
+      },
+    });
     const targetUserSocket = getSocketByUserId(userId);
-    if (!targetUserSocket) {
+    if (!gamePlayer || !targetUserSocket) {
       socket.emit("GenericResponseError", {
-        error: "Could not update target user",
+        error: "Could not find the target user",
       });
       return;
     }

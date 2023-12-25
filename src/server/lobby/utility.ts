@@ -16,6 +16,7 @@ import { PhaseEnterUsername } from "@/server/lobby/phases/enter-username";
 import { PhaseLobbies } from "@/server/lobby/phases/lobbies";
 import { PhaseLobby } from "@/server/lobby/phases/lobby";
 import { SocketServerSide } from "@/server/types";
+import { MAX_SPECTATORS } from "@/shared/types/socket-communication/games/game-types";
 import { GameTypes } from "@/shared/types/socket-communication/general";
 import {
   LobbyWithGameType,
@@ -23,9 +24,7 @@ import {
   UserWithLobbyItOwns,
 } from "@/shared/types/socket-communication/types";
 
-// export const DeleteAfterSeconds = 1000 * 300;
-
-export const DeleteAfterSeconds = 60 * 10;
+export const DeleteAfterSeconds = 1200;
 
 export const findUser = async (
   socket: SocketServerSide
@@ -237,13 +236,25 @@ const createLobbyPayload = async (lobbyId: string) => {
     return null;
   }
   lobby.Players?.sort?.((a, b) => {
-    const aValue = a?.User.LobbyItOwns ? 1 : 0;
-    const bValue = b?.User.LobbyItOwns ? 1 : 0;
-    if (aValue > bValue) {
+    const aLobbyOwner = a?.User.LobbyItOwns ? 1 : 0;
+    const bLobbyOwner = b?.User.LobbyItOwns ? 1 : 0;
+    const aSpectator = a.spectator ? 1 : 0;
+    const bSpectator = b.spectator ? 1 : 0;
+
+    if (aLobbyOwner > bLobbyOwner) {
       return -1;
-    } else if (aValue < bValue) {
+    }
+    if (aLobbyOwner < bLobbyOwner) {
       return 1;
     }
+
+    if (aSpectator > bSpectator) {
+      return 1;
+    }
+    if (aSpectator < bSpectator) {
+      return -1;
+    }
+
     return 0;
   });
   return lobby;
@@ -417,6 +428,7 @@ export const leaveLobby = async (data: SocketServerSide | string) => {
   let lobby = await prisma.lobby.findFirst({
     where: { id: lobbyId },
     include: {
+      GameType: true,
       Players: {
         where: {
           User: {
@@ -432,7 +444,7 @@ export const leaveLobby = async (data: SocketServerSide | string) => {
   if (!lobby) {
     return;
   }
-  const game = chessRepository.findOne(lobby.id);
+  const game = findGameBasedOnLobby(lobby);
   if (game) {
     game.leaveGame(user.id);
   }
@@ -443,6 +455,7 @@ export const leaveLobby = async (data: SocketServerSide | string) => {
   lobby = await prisma.lobby.findFirst({
     where: { id: lobbyId },
     include: {
+      GameType: true,
       Players: {
         where: {
           User: {
@@ -458,11 +471,12 @@ export const leaveLobby = async (data: SocketServerSide | string) => {
   if (!lobby) {
     return;
   }
-  if (lobby.Players.length === 0) {
+  const realPlayers = lobby.Players.filter((player) => !player.spectator);
+  if (realPlayers.length === 0) {
     deleteLobby(lobby.id);
     return;
   } else if (lobby?.ownerId === user.id) {
-    const player = lobby.Players[0];
+    const player = realPlayers[0];
     const ownerId = player ? player.userId : null;
     if (!ownerId) {
       deleteLobby(lobby.id);
@@ -538,13 +552,22 @@ export const guardUserConnect = async (
   if (!lobby) {
     return true;
   }
+  const isSpectator = !!lobby.Players.filter(
+    (player) => player.userId === sessionId && player.spectator
+  )[0];
   const players = lobby.Players.filter(
-    (player) => player.User.connected && player.User.id !== sessionId
+    (player) =>
+      player.User.connected &&
+      player.User.id !== sessionId &&
+      (isSpectator ? player.spectator : !player.spectator)
   );
-
-  if (players.length >= lobby.GameType.maxPlayers) {
+  if (
+    players.length >= (isSpectator ? lobby.GameType.maxPlayers : MAX_SPECTATORS)
+  ) {
     sendBackToLobbiesAndConnectUser(
-      "The maximum amount of players are already in the lobby. You have been returned to the lobby overview."
+      `The maximum amount of ${
+        !isSpectator ? "players" : "spectators"
+      } are already in the lobby. You have been returned to the lobby overview.`
     );
     return false;
   }
@@ -553,9 +576,12 @@ export const guardUserConnect = async (
   }
   const game = findGameBasedOnLobby(lobby);
   if (!game) {
-    return true;
+    sendBackToLobbiesAndConnectUser(
+      "The game could not be found. You have been returned to the lobby overview."
+    );
+    return false;
   }
-  if (!game.getPlayer(sessionId)) {
+  if (!isSpectator && !game.getPlayer(sessionId)) {
     sendBackToLobbiesAndConnectUser(
       "The game has already started and your not part of it. You have been returned to the lobby overview."
     );
@@ -601,10 +627,10 @@ export const deleteGameAndReturnToLobby = async (lobbyId: string) => {
   if (game) {
     game.destroy();
   }
-  const userIds = lobby.Players.map((player) => player.userId);
-  if (userIds.length > 0) {
+  const playerIds = lobby.Players.map((player) => player.userId);
+  if (playerIds.length > 0) {
     await prisma.gamePlayer.updateMany({
-      where: { userId: { in: userIds } },
+      where: { userId: { in: playerIds } },
       data: { ready: false },
     });
   }
@@ -619,7 +645,7 @@ export const deleteGameAndReturnToLobby = async (lobbyId: string) => {
       });
     }
   } catch (e) {}
-  const sockets = getSocketsByUserIds(userIds);
+  const sockets = getSocketsByUserIds(playerIds);
   await Promise.all(
     sockets.map(
       (socket) =>

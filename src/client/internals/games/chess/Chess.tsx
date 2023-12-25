@@ -26,6 +26,7 @@ function PreChess(props: BoardProps<ChessPiece>) {
     setCurrentPlayerIndex,
     setSelfPlayerIndex,
     setInterruptingMessage,
+    setSpectators,
   } = useContext(TwoPlayerTurnBasedContext);
   const { setGameCells, setSelectedPiece } = useContext(ChessBoardContext);
 
@@ -44,6 +45,7 @@ function PreChess(props: BoardProps<ChessPiece>) {
       setIsLoaded(true);
       setSelectedPiece(null, false);
       setGameCells(gameData.cells);
+      setSpectators(gameData.spectators);
     });
 
     if (!signaledReady.current) {
@@ -65,6 +67,7 @@ function PreChess(props: BoardProps<ChessPiece>) {
     setPlayers,
     setSelectedPiece,
     setSelfPlayerIndex,
+    setSpectators,
   ]);
 
   return props.board;

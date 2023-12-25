@@ -1,4 +1,8 @@
-import { GameTypes,GenericErrorResponseFunction, GenericResponseError  } from "../general";
+import {
+  GameTypes,
+  GenericErrorResponseFunction,
+  GenericResponseError,
+} from "../general";
 
 export const JoinLobby = "JoinLobby";
 export const JoinLobbyResponseSuccess = "JoinLobbyResponseSuccess";
@@ -13,8 +17,6 @@ export const UpdateLobbiesResponse = "UpdateLobbiesResponse";
 export const PhaseIdLobbies = "lobbies";
 import { LobbyWithGameTypeAndUsers } from "@/shared/types/socket-communication/types";
 
-
-
 export interface PhaseLobbiesTypes {
   ClientToServer: {
     [CreateLobby]: ({
@@ -24,11 +26,23 @@ export interface PhaseLobbiesTypes {
       lobbyName: string;
       gameType: GameTypes;
     }) => void;
-    [JoinLobby]: ({ lobbyId }: { lobbyId: string }) => void;
+    [JoinLobby]: ({
+      lobbyId,
+      spectator,
+    }: {
+      lobbyId: string;
+      spectator: boolean;
+    }) => void;
     [RequestUpdateLobbies]: () => void;
   };
   ServerToClient: {
-    [JoinLobbyResponseSuccess]: ({ lobbyId }: { lobbyId: string }) => void;
+    [JoinLobbyResponseSuccess]: ({
+      lobbyId,
+      gameType,
+    }: {
+      lobbyId: string;
+      gameType: GameTypes | null;
+    }) => void;
     [CreateLobbyResponseSuccess]: ({ lobbyId }: { lobbyId: string }) => void;
     [UpdateLobbiesResponse]: ({
       lobbies,

@@ -52,6 +52,8 @@ export default function Lobby() {
 
   const playerIsOwner = playerSelf?.User?.LobbyItOwns?.id === lobbyId;
 
+  const playerIsSpectator = playerSelf?.spectator;
+
   const title = lobby
     ? `Lobby "${lobby?.name}" | Game "${lobby.GameType.name}"`
     : "";
@@ -88,9 +90,13 @@ export default function Lobby() {
       },
     ];
 
+    let status = player.spectator ? "Spectator" : "";
+    if (!player.spectator) {
+      status = player.ready ? "Ready" : "Not ready";
+    }
     return {
       name: player.User.username,
-      status: player.ready ? "Ready" : "Not ready",
+      status,
       options: (
         <div className="options options-content">
           {playerIsOwner && player.userId !== sessionId && (
@@ -101,19 +107,22 @@ export default function Lobby() {
     };
   });
 
-  const readyButton = (
-    <button
-      id="ready"
-      className="ready-button"
-      disabled={isSubmitting}
-      onClick={() => {
-        setIsSubmitting(true);
-        socket.emit("SetReady", { ready: !playerSelf?.ready });
-      }}
-    >
-      {!playerSelf?.ready ? "Ready" : "Not ready"}
-    </button>
-  );
+  let readyButton = null;
+  if (!playerIsSpectator) {
+    readyButton = (
+      <button
+        id="ready"
+        className="ready-button"
+        disabled={isSubmitting}
+        onClick={() => {
+          setIsSubmitting(true);
+          socket.emit("SetReady", { ready: !playerSelf?.ready });
+        }}
+      >
+        {!playerSelf?.ready ? "Ready" : "Not ready"}
+      </button>
+    );
+  }
   const leaveButton = (
     <button
       id="leave"
@@ -185,31 +194,6 @@ export default function Lobby() {
         tableClass="lobby-overview"
         extraColumnClasses={extraClasses}
       />
-      {/* <div className="waiting-room-body lobby-body">
-        <div className="waiting-room-container lobby-container">
-          <div className="waiting-room-info">
-            <h1 className="waiting-room-title">{title}</h1>
-          </div>
-          <div className="waiting-room-columns">
-            <div className="waiting-room-row player-row">
-              <h2 className="name">Player name</h2>
-              <h2 className="status">Status</h2>
-              <h2 className="options" />
-            </div>
-          </div>
-          <div className="waiting-room-rows">{playerRows}</div>
-          <div className="button-section left-right">
-            <div className="left-section">
-              {startButton}
-              {readyButton}
-            </div>
-            <div className="right-section">
-              {leaveButton}
-              {editLobbyButton}
-            </div>
-          </div>
-        </div>
-      </div> */}
     </>
   );
 }

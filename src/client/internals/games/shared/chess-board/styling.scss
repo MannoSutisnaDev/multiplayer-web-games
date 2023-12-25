@@ -27,7 +27,7 @@ body {
   height: 100%;
   &.spectating {
     user-select: none;
-    // pointer-events: none;
+    pointer-events: none;
   }
 }
 

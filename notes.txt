@@ -392,7 +392,7 @@ Chess en Checkers responsive maken
 
 Spectator mode maken
 
-
+Specators should not be made the host of the lobby if all the players leave
 
 To test
   Black
@@ -417,3 +417,32 @@ To test (after checkmate)
 Filter model connected to junction table
 https://www.prisma.io/docs/orm/prisma-client/queries/relation-queries#filter-on--to-one-relations
 
+Javascript multi column sort
+https://typeofnan.dev/sort-array-objects-multiple-properties-javascript/
+
+Todo:
+
+Bepalen dat je spectator bent en dan alle controls uitschakelen
+Zorgen dat de selfPlayerIndex op -1 komt te staan als je spectator bent
+
+
+Lobby opnieuw opstarten gooit mensen uit het spel. 
+Dit moet niet gebeuren.
+UpdatedAt kolom toevoegen aan de game_player tabel
+
+
+Pawn twee vooruit fixen
+
+Game joinen als spectator als het spel al is begonnen
+
+Init delete game aanpassen
+
+Spectator opnieuw joinen triggert lobby delete, dit moet niet
+
+
+Initialize time out abstract functie van maken
+
+
+Show correct win message for spectator
+
+Delete game refactoren zodat het in de BaseGameModel kan

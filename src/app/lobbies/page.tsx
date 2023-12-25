@@ -8,6 +8,8 @@ import CreateLobbyModal from "@/client/internals/modal/implementation/CreateLobb
 import { socket } from "@/client/internals/socket/socket";
 import { SocketContextWrapper } from "@/client/internals/socket/SocketContext";
 import { ToastMessageContextWrapper } from "@/client/internals/toast-messages/ToastMessageContext";
+import { MAX_SPECTATORS } from "@/shared/types/socket-communication/games/game-types";
+import { GameTypes } from "@/shared/types/socket-communication/general";
 import { LobbyWithGameTypeAndUsers } from "@/shared/types/socket-communication/types";
 
 type LobbyData = {
@@ -21,7 +23,7 @@ type LobbyData = {
 
 export default function Lobbies() {
   const { addErrorMessage } = useContext(ToastMessageContextWrapper);
-  const { username, setLobbyId } = useContext(SocketContextWrapper);
+  const { setLobbyId, setPlayingGame } = useContext(SocketContextWrapper);
   const router = useRouter();
 
   const [lobbies, setLobbies] = useState<LobbyWithGameTypeAndUsers[]>([]);
@@ -36,11 +38,18 @@ export default function Lobbies() {
     });
     socket.on(
       "JoinLobbyResponseSuccess",
-      ({ lobbyId }: { lobbyId: string }) => {
+      ({
+        lobbyId,
+        gameType,
+      }: {
+        lobbyId: string;
+        gameType: GameTypes | null;
+      }) => {
         setIsSubmitting(false);
         if (!lobbyId) {
           return;
         }
+        setPlayingGame(gameType);
         setLobbyId(lobbyId);
       }
     );
@@ -61,30 +70,32 @@ export default function Lobbies() {
       socket.removeAllListeners("GenericResponseError");
       socket.removeAllListeners("JoinLobbyResponseSuccess");
     };
-  }, [addErrorMessage, router, setLobbyId]);
+  }, [addErrorMessage, router, setLobbyId, setPlayingGame]);
 
-  const joinLobby = (lobbyId: string) => {
+  const joinLobby = (lobbyId: string, spectator: boolean = false) => {
     if (isSubmitting) {
       return;
     }
     setIsSubmitting(true);
-    socket.emit("JoinLobby", { lobbyId });
+    socket.emit("JoinLobby", { lobbyId, spectator });
   };
 
   const lobbiesData: LobbyData[] = [];
   for (const lobby of lobbies) {
     const { name, GameType, Players } = lobby;
+    const regularPlayers = Players.filter((player) => !player.spectator);
+    const spectatorPlayers = Players.filter((player) => player.spectator);
     const lobbyData: LobbyData = {
       lobby: name,
       game: GameType.name,
-      players: `${Players.length ?? 0} / ${GameType.maxPlayers}`,
-      spectators: "0 / 0",
+      players: `${regularPlayers.length ?? 0} / ${GameType.maxPlayers}`,
+      spectators: `${spectatorPlayers.length ?? 0} / ${MAX_SPECTATORS}`,
       join: (
         <button
           className="btn"
           disabled={
             lobby.gameStarted ||
-            lobby.Players.length === lobby.GameType.maxPlayers
+            regularPlayers.length >= lobby.GameType.maxPlayers
           }
           onClick={() => joinLobby(lobby.id)}
         >
@@ -92,7 +103,11 @@ export default function Lobbies() {
         </button>
       ),
       spectate: (
-        <button className="btn" disabled={true} onClick={() => {}}>
+        <button
+          className="btn"
+          disabled={spectatorPlayers.length >= MAX_SPECTATORS}
+          onClick={() => joinLobby(lobby.id, true)}
+        >
           Spectate
         </button>
       ),
